@@ -19,6 +19,20 @@
     th{background:#eef2ff;color:#1f2a6a}
     .hint{font-size:12px;color:#666;margin-top:8px}
     @media(max-width:900px){.grid{grid-template-columns:1fr}}
+
+    /* Accordion */
+    details.accordion{border:1px solid #e5e7eb;border-radius:14px;overflow:hidden}
+    details.accordion > summary{
+      list-style:none; cursor:pointer; padding:14px 16px; background:#f9fafb;
+      display:flex; align-items:center; justify-content:space-between; font-weight:700
+    }
+    details.accordion > summary::-webkit-details-marker{display:none}
+    .chev{transition:transform .2s ease}
+    details[open] .chev{transform:rotate(180deg)}
+    .acc-body{padding:16px}
+    .btn{width:100%;margin-top:10px;padding:12px;border:0;border-radius:12px;background:#2563eb;color:#fff;font-weight:700;font-size:14px;cursor:pointer}
+    .btn-dark{background:#111827}
+    .err{margin-top:10px;color:#b91c1c;font-size:13px}
   </style>
 </head>
 
@@ -27,7 +41,7 @@
 
     <div class="card">
       <h1>Calculadora de Taxas</h1>
-      <p>Digite o <strong>valor à vista</strong>. A calculadora mostra o <strong>valor final</strong> (já com taxa embutida) e a <strong>parcela</strong>.</p>
+      <p>Digite o <strong>valor à vista</strong>. A tabela mostra o <strong>valor final</strong> (com taxa embutida) e a <strong>parcela</strong>.</p>
 
       <label for="valor">Valor à vista (R$)</label>
       <input type="text" id="valor" placeholder="Ex: 1000 ou 1000,50" />
@@ -46,11 +60,54 @@
       </div>
     </div>
 
+    <!-- Accordion (Área Avançada) -->
+    <div class="card" style="margin-top:20px;">
+      <details class="accordion" id="advAccordion">
+        <summary>
+          Área Avançada (Valor que recebe após taxa extra) <span class="chev">▾</span>
+        </summary>
+
+        <div class="acc-body">
+          <p style="margin:0 0 12px;color:#555">
+            Aqui mostramos apenas <strong>Parcelas</strong> e <strong>Valor que recebe</strong>,
+            calculado como:<br>
+            <strong>Valor que recebe</strong> = <em>Valor Final (tabela de cima)</em> − <em>(Valor Final × taxa extra)</em>
+          </p>
+
+          <!-- Lock -->
+          <div id="lockBox">
+            <label for="pin">Senha</label>
+            <input id="pin" type="password" placeholder="Digite a senha" />
+            <button class="btn" id="btnUnlock">Desbloquear</button>
+            <div class="err" id="lockMsg"></div>
+            <div class="hint">Obs: trava visual (site estático).</div>
+          </div>
+
+          <!-- Content -->
+          <div id="advancedBox" style="display:none;margin-top:14px;">
+            <div class="grid">
+              <div>
+                <h3 style="margin:0 0 8px;font-size:15px;">Máquina Física (valor que recebe)</h3>
+                <div id="maquinaExtra"></div>
+              </div>
+              <div>
+                <h3 style="margin:0 0 8px;font-size:15px;">Link de Pagamento (valor que recebe)</h3>
+                <div id="linkExtra"></div>
+              </div>
+            </div>
+
+            <button class="btn btn-dark" id="btnLock">Bloquear</button>
+          </div>
+        </div>
+      </details>
+    </div>
+
   </div>
 
 <script>
-  // ===== TAXAS =====
-  // Máquina: inclui débito + crédito (1x a 18x)
+  // =========================
+  // TAXAS PRINCIPAIS (tabela de cima) — não alteradas
+  // =========================
   const MAQUINA = {
     debito: 1.30,
     credito: {
@@ -60,7 +117,6 @@
     }
   };
 
-  // Link: crédito (1x a 12x)
   const LINK = {
     credito: {
       1: 6.50, 2: 9.55, 3: 10.40, 4: 11.30, 5: 12.20, 6: 13.10,
@@ -68,7 +124,56 @@
     }
   };
 
-  // ===== HELPERS =====
+  // =========================
+  // TAXAS EXTRAS (accordion) — (percentuais)
+  // =========================
+  // Observação: usei a chave 0 para o "Débito" da Máquina (0,99%).
+  const EXTRA_MAQUINA = {
+    0: 0.99,   // Débito
+    1: 3.39,
+    2: 4.40,
+    3: 5.40,
+    4: 5.70,
+    5: 5.80,
+    6: 5.99,
+    7: 7.20,
+    8: 7.90,
+    9: 8.40,
+    10: 8.85,
+    11: 9.40,
+    12: 9.85,
+    13: 11.40,
+    14: 11.90,
+    15: 12.75,
+    16: 12.80,
+    17: 12.85,
+    18: 12.90
+  };
+
+  const EXTRA_LINK = {
+    1: 3.49,
+    2: 4.85,
+    3: 5.45,
+    4: 6.05,
+    5: 6.45,
+    6: 6.95,
+    7: 8.00,
+    8: 8.60,
+    9: 9.10,
+    10: 9.40,
+    11: 10.20,
+    12: 10.75
+  };
+
+  // =========================
+  // SENHA (trava visual)
+  // =========================
+  const ADV_PIN = "358000"; // <- troque aqui
+  const ADV_KEY = "adv_unlocked_v1";
+
+  // =========================
+  // HELPERS
+  // =========================
   function formatar(v){
     return v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
   }
@@ -82,14 +187,13 @@
     return Number.isFinite(v) && v > 0 ? v : null;
   }
 
-  // Valor final com taxa embutida para você receber o valor à vista:
   // valor_final = valor_avista / (1 - taxa)
   function valorFinalEmbutido(valorAvista, taxaPercent){
     const t = taxaPercent / 100;
     return valorAvista / (1 - t);
   }
 
-  function montarTabela(linhasHtml){
+  function montarTabela4(linhasHtml){
     return `
       <table>
         <thead>
@@ -107,7 +211,7 @@
     `;
   }
 
-  function linha(parcelasLabel, taxaPercent, valorFinal, parcela){
+  function linha4(parcelasLabel, taxaPercent, valorFinal, parcela){
     const parcelaTxt = parcela == null ? "-" : formatar(parcela);
     return `
       <tr>
@@ -119,6 +223,39 @@
     `;
   }
 
+  function montarTabela2(linhasHtml){
+    return `
+      <table>
+        <thead>
+          <tr>
+            <th>Parcelas</th>
+            <th>Valor que recebe</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${linhasHtml}
+        </tbody>
+      </table>
+    `;
+  }
+
+  function linha2(parcelasLabel, valorRecebe){
+    return `
+      <tr>
+        <td>${parcelasLabel}</td>
+        <td><strong>${formatar(valorRecebe)}</strong></td>
+      </tr>
+    `;
+  }
+
+  function taxaExtra(obj, key){
+    const v = obj[key];
+    return (typeof v === "number" && isFinite(v)) ? v : 0;
+  }
+
+  // =========================
+  // RENDER TABELAS PRINCIPAIS (de cima)
+  // =========================
   function atualizar(){
     const alvoMaquina = document.getElementById("maquina");
     const alvoLink = document.getElementById("link");
@@ -127,41 +264,134 @@
     if (!valor){
       alvoMaquina.innerHTML = "Digite um valor acima.";
       alvoLink.innerHTML = "Digite um valor acima.";
+      renderAvancado(null);
       return;
     }
 
-    // ---- Máquina Física (Débito + Crédito)
+    // Máquina Física (Débito + Crédito)
     let linhasM = "";
-
-    // Débito
     const vfDeb = valorFinalEmbutido(valor, MAQUINA.debito);
-    linhasM += linha("Débito", MAQUINA.debito, vfDeb, null);
+    linhasM += linha4("Débito", MAQUINA.debito, vfDeb, null);
 
-    // Crédito
     Object.keys(MAQUINA.credito).map(Number).sort((a,b)=>a-b).forEach(p=>{
       const taxa = MAQUINA.credito[p];
       const vf = valorFinalEmbutido(valor, taxa);
       const parc = vf / p;
-      linhasM += linha(`${p}x`, taxa, vf, parc);
+      linhasM += linha4(`${p}x`, taxa, vf, parc);
     });
 
-    alvoMaquina.innerHTML = montarTabela(linhasM);
+    alvoMaquina.innerHTML = montarTabela4(linhasM);
 
-    // ---- Link de Pagamento (Crédito)
+    // Link (Crédito)
     let linhasL = "";
     Object.keys(LINK.credito).map(Number).sort((a,b)=>a-b).forEach(p=>{
       const taxa = LINK.credito[p];
       const vf = valorFinalEmbutido(valor, taxa);
       const parc = vf / p;
-      linhasL += linha(`${p}x`, taxa, vf, parc);
+      linhasL += linha4(`${p}x`, taxa, vf, parc);
     });
 
-    alvoLink.innerHTML = montarTabela(linhasL);
+    alvoLink.innerHTML = montarTabela4(linhasL);
+
+    renderAvancado(valor);
+  }
+
+  // =========================
+  // RENDER ÁREA AVANÇADA (subtrai taxa extra do Valor Final da tabela de cima)
+  // valor_recebe = valorFinal - (valorFinal * taxaExtra)
+  // =========================
+  function renderAvancado(valorAvista){
+    const boxM = document.getElementById("maquinaExtra");
+    const boxL = document.getElementById("linkExtra");
+
+    if (!isUnlocked()){
+      return;
+    }
+
+    if (!valorAvista){
+      boxM.innerHTML = "<p>Digite um valor acima.</p>";
+      boxL.innerHTML = "<p>Digite um valor acima.</p>";
+      return;
+    }
+
+    // Máquina
+    let linhasM = "";
+
+    // Débito
+    {
+      const vf = valorFinalEmbutido(valorAvista, MAQUINA.debito); // Valor Final (tabela de cima)
+      const te = taxaExtra(EXTRA_MAQUINA, 0);                     // taxa extra do débito
+      const recebe = vf - (vf * (te/100));
+      linhasM += linha2("Débito", recebe);
+    }
+
+    // Crédito
+    Object.keys(MAQUINA.credito).map(Number).sort((a,b)=>a-b).forEach(p=>{
+      const vf = valorFinalEmbutido(valorAvista, MAQUINA.credito[p]); // Valor Final (tabela de cima)
+      const te = taxaExtra(EXTRA_MAQUINA, p);                         // taxa extra por parcela
+      const recebe = vf - (vf * (te/100));
+      linhasM += linha2(`${p}x`, recebe);
+    });
+
+    boxM.innerHTML = montarTabela2(linhasM);
+
+    // Link
+    let linhasL = "";
+    Object.keys(LINK.credito).map(Number).sort((a,b)=>a-b).forEach(p=>{
+      const vf = valorFinalEmbutido(valorAvista, LINK.credito[p]); // Valor Final (tabela de cima)
+      const te = taxaExtra(EXTRA_LINK, p);                         // taxa extra por parcela
+      const recebe = vf - (vf * (te/100));
+      linhasL += linha2(`${p}x`, recebe);
+    });
+
+    boxL.innerHTML = montarTabela2(linhasL);
+  }
+
+  // =========================
+  // LOCK / ACCORDION
+  // =========================
+  function setUnlocked(v){
+    if (v) localStorage.setItem(ADV_KEY, "1");
+    else localStorage.removeItem(ADV_KEY);
+  }
+  function isUnlocked(){
+    return localStorage.getItem(ADV_KEY) === "1";
+  }
+  function updateLockUI(){
+    const lockBox = document.getElementById("lockBox");
+    const advancedBox = document.getElementById("advancedBox");
+    if (isUnlocked()){
+      lockBox.style.display = "none";
+      advancedBox.style.display = "block";
+      renderAvancado(lerValor());
+    } else {
+      lockBox.style.display = "block";
+      advancedBox.style.display = "none";
+    }
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    const el = document.getElementById("valor");
-    el.addEventListener("input", atualizar);
+    document.getElementById("valor").addEventListener("input", atualizar);
+
+    document.getElementById("btnUnlock").addEventListener("click", () => {
+      const pin = (document.getElementById("pin").value || "").trim();
+      const msg = document.getElementById("lockMsg");
+      if (pin === ADV_PIN){
+        msg.textContent = "";
+        setUnlocked(true);
+        updateLockUI();
+        document.getElementById("advAccordion").open = true;
+      } else {
+        msg.textContent = "Senha incorreta.";
+      }
+    });
+
+    document.getElementById("btnLock").addEventListener("click", () => {
+      setUnlocked(false);
+      updateLockUI();
+    });
+
+    updateLockUI();
     atualizar();
   });
 </script>
