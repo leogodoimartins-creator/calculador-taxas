@@ -7,18 +7,52 @@
 
   <style>
     body{font-family:Arial,Helvetica,sans-serif;background:#f5f6fa;padding:20px;margin:0}
-    .container{max-width:1100px;margin:auto}
-    .card{background:white;padding:20px;border-radius:15px;box-shadow:0 8px 20px rgba(0,0,0,0.08);margin-bottom:20px}
+    .container{max-width:1120px;margin:auto}
+    .card{background:white;padding:20px;border-radius:15px;box-shadow:0 8px 20px rgba(0,0,0,0.08);margin-bottom:16px}
     h1{margin:0 0 10px 0}
-    p{margin:0 0 16px 0;color:#555}
+    p{margin:0 0 14px 0;color:#555;line-height:1.35}
     label{display:block;margin:10px 0 6px 0;font-size:13px;color:#222}
-    input{width:100%;padding:12px;border-radius:10px;border:1px solid #ddd;font-size:16px;outline:none}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-    table{width:100%;border-collapse:collapse;margin-top:10px}
-    th,td{padding:10px;border-bottom:1px solid #eee;text-align:left;font-size:14px}
-    th{background:#eef2ff;color:#1f2a6a}
+    input, select{width:100%;padding:12px;border-radius:10px;border:1px solid #ddd;font-size:15px;outline:none;background:#fff}
+    .row{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+    .row > div{flex:1;min-width:210px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    @media(max-width:950px){.grid{grid-template-columns:1fr}}
     .hint{font-size:12px;color:#666;margin-top:8px}
-    @media(max-width:900px){.grid{grid-template-columns:1fr}}
+
+    table{width:100%;border-collapse:collapse;margin-top:10px}
+    th,td{padding:10px;border-bottom:1px solid #eee;text-align:left;font-size:14px;vertical-align:top}
+    th{background:#eef2ff;color:#1f2a6a;position:sticky;top:0}
+    .pill{display:inline-block;font-size:12px;padding:3px 10px;border-radius:999px;border:1px solid #e5e7eb;background:#f9fafb;color:#111827}
+    .badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+
+    .btn{padding:10px 12px;border:0;border-radius:12px;background:#2563eb;color:#fff;font-weight:700;font-size:13px;cursor:pointer}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .btn-ghost{background:#eef2ff;color:#1f2a6a;border:1px solid #dbe7ff}
+    .btn-dark{background:#111827}
+    .btn-small{padding:7px 10px;border-radius:10px;font-size:12px}
+
+    /* Highlights */
+    tr.used td:first-child::after{
+      content:"  • mais usado";
+      color:#0f766e;
+      font-weight:700;
+      font-size:12px;
+      margin-left:6px;
+    }
+    tr.used{background:#f0fdfa}
+    tr.best{background:#fff7ed}
+    tr.best td:first-child::after{
+      content:"  • melhor custo";
+      color:#9a3412;
+      font-weight:700;
+      font-size:12px;
+      margin-left:6px;
+    }
+
+    /* Seller box */
+    .sellerBox{margin-top:12px;padding:12px;border-radius:14px;border:1px solid #e5e7eb;background:#fafafa}
+    .sellerTop{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+    .sellerText{width:100%;min-height:78px;margin-top:10px;padding:10px;border-radius:12px;border:1px solid #e5e7eb;font-size:13px;white-space:pre-wrap}
 
     /* Accordion */
     details.accordion{border:1px solid #e5e7eb;border-radius:14px;overflow:hidden}
@@ -30,9 +64,11 @@
     .chev{transition:transform .2s ease}
     details[open] .chev{transform:rotate(180deg)}
     .acc-body{padding:16px}
-    .btn{width:100%;margin-top:10px;padding:12px;border:0;border-radius:12px;background:#2563eb;color:#fff;font-weight:700;font-size:14px;cursor:pointer}
-    .btn-dark{background:#111827}
     .err{margin-top:10px;color:#b91c1c;font-size:13px}
+
+    /* small actions column */
+    .actionsCell{display:flex;gap:8px;flex-wrap:wrap}
+    .muted{color:#555}
   </style>
 </head>
 
@@ -41,27 +77,106 @@
 
     <div class="card">
       <h1>Calculadora de Taxas</h1>
-      <p>Digite o <strong>valor à vista</strong>. A tabela mostra o <strong>valor final</strong> (com taxa embutida) e a <strong>parcela</strong>.</p>
+      <p>
+        Digite o <strong>valor à vista</strong>. A tabela calcula o <strong>valor final</strong> (taxa embutida) e a <strong>parcela</strong>.
+        <br>Você também pode <strong>copiar</strong> uma opção para mandar no WhatsApp e usar o <strong>modo vendedor</strong>.
+      </p>
 
-      <label for="valor">Valor à vista (R$)</label>
-      <input type="text" id="valor" placeholder="Ex: 1000 ou 1000,50" />
-      <div class="hint">Você pode digitar com vírgula (ex: 1000,50). Não use símbolo R$.</div>
+      <div class="row">
+        <div>
+          <label for="valor">Valor à vista (R$)</label>
+          <input type="text" id="valor" placeholder="Ex: 1000 ou 1000,50" />
+          <div class="hint">Aceita: 1000 / 1000,50 / 1.000,50</div>
+        </div>
+
+        <div>
+          <label for="maxParcelas">Mostrar até</label>
+          <select id="maxParcelas">
+            <option value="6">6x</option>
+            <option value="12" selected>12x</option>
+            <option value="18">18x</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="showDebito">Débito (Máquina)</label>
+          <select id="showDebito">
+            <option value="yes" selected>Mostrar</option>
+            <option value="no">Esconder</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="roundStep">Arredondar parcela</label>
+          <select id="roundStep">
+            <option value="0" selected>Não arredondar</option>
+            <option value="0.05">Para 0,05</option>
+            <option value="0.10">Para 0,10</option>
+            <option value="1.00">Para 1,00</option>
+          </select>
+          <div class="hint">Aplicado nas parcelas; total é ajustado na última parcela (opcional).</div>
+        </div>
+
+        <div>
+          <label for="adjustLast">Ajustar última parcela</label>
+          <select id="adjustLast">
+            <option value="yes" selected>Sim (recomendado)</option>
+            <option value="no">Não</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="badges">
+        <span class="pill">Destaque: 1x–3x (mais usados)</span>
+        <span class="pill">Destaque: menor valor final (melhor custo)</span>
+        <span class="pill">Copiar: linha / tabela / mensagem pronta</span>
+      </div>
     </div>
 
     <div class="grid">
       <div class="card">
-        <h2 style="margin:0">Máquina Física</h2>
+        <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center">
+          <h2 style="margin:0">Máquina Física</h2>
+          <button class="btn btn-ghost btn-small" id="copyTableMaquina">Copiar tabela (WhatsApp)</button>
+        </div>
         <div id="maquina" style="margin-top:10px;">Digite um valor acima.</div>
+
+        <div class="sellerBox">
+          <div class="sellerTop">
+            <strong>Modo vendedor (Máquina)</strong>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-small" id="copySellerMaquina" disabled>Copiar mensagem</button>
+              <button class="btn btn-ghost btn-small" id="clearSellerMaquina">Limpar</button>
+            </div>
+          </div>
+          <div class="hint">Clique em “Usar no vendedor” em uma linha da tabela para gerar a mensagem.</div>
+          <div class="sellerText" id="sellerTextMaquina">Nenhuma opção selecionada.</div>
+        </div>
       </div>
 
       <div class="card">
-        <h2 style="margin:0">Link de Pagamento</h2>
+        <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center">
+          <h2 style="margin:0">Link de Pagamento</h2>
+          <button class="btn btn-ghost btn-small" id="copyTableLink">Copiar tabela (WhatsApp)</button>
+        </div>
         <div id="link" style="margin-top:10px;">Digite um valor acima.</div>
+
+        <div class="sellerBox">
+          <div class="sellerTop">
+            <strong>Modo vendedor (Link)</strong>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-small" id="copySellerLink" disabled>Copiar mensagem</button>
+              <button class="btn btn-ghost btn-small" id="clearSellerLink">Limpar</button>
+            </div>
+          </div>
+          <div class="hint">Clique em “Usar no vendedor” em uma linha da tabela para gerar a mensagem.</div>
+          <div class="sellerText" id="sellerTextLink">Nenhuma opção selecionada.</div>
+        </div>
       </div>
     </div>
 
     <!-- Accordion (Área Avançada) -->
-    <div class="card" style="margin-top:20px;">
+    <div class="card">
       <details class="accordion" id="advAccordion">
         <summary>
           Área Avançada (Valor que recebe após taxa extra) <span class="chev">▾</span>
@@ -69,8 +184,7 @@
 
         <div class="acc-body">
           <p style="margin:0 0 12px;color:#555">
-            Aqui mostramos apenas <strong>Parcelas</strong> e <strong>Valor que recebe</strong>,
-            calculado como:<br>
+            Mostra somente <strong>Parcelas</strong> e <strong>Valor que recebe</strong>, calculado como:<br>
             <strong>Valor que recebe</strong> = <em>Valor Final (tabela de cima)</em> − <em>(Valor Final × taxa extra)</em>
           </p>
 
@@ -87,12 +201,18 @@
           <div id="advancedBox" style="display:none;margin-top:14px;">
             <div class="grid">
               <div>
-                <h3 style="margin:0 0 8px;font-size:15px;">Máquina Física (valor que recebe)</h3>
-                <div id="maquinaExtra"></div>
+                <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center">
+                  <h3 style="margin:0;font-size:15px;">Máquina (valor que recebe)</h3>
+                  <button class="btn btn-ghost btn-small" id="copyExtraMaquina">Copiar (WhatsApp)</button>
+                </div>
+                <div id="maquinaExtra" style="margin-top:10px;"></div>
               </div>
               <div>
-                <h3 style="margin:0 0 8px;font-size:15px;">Link de Pagamento (valor que recebe)</h3>
-                <div id="linkExtra"></div>
+                <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center">
+                  <h3 style="margin:0;font-size:15px;">Link (valor que recebe)</h3>
+                  <button class="btn btn-ghost btn-small" id="copyExtraLink">Copiar (WhatsApp)</button>
+                </div>
+                <div id="linkExtra" style="margin-top:10px;"></div>
               </div>
             </div>
 
@@ -106,7 +226,7 @@
 
 <script>
   // =========================
-  // TAXAS PRINCIPAIS (tabela de cima) — não alteradas
+  // TAXAS PRINCIPAIS (tabela de cima)
   // =========================
   const MAQUINA = {
     debito: 1.30,
@@ -125,50 +245,25 @@
   };
 
   // =========================
-  // TAXAS EXTRAS (accordion) — (percentuais)
+  // TAXAS EXTRAS (accordion) — percentuais
+  // chave 0 = Débito extra da Máquina
   // =========================
-  // Observação: usei a chave 0 para o "Débito" da Máquina (0,99%).
   const EXTRA_MAQUINA = {
-    0: 0.99,   // Débito
-    1: 3.39,
-    2: 4.40,
-    3: 5.40,
-    4: 5.70,
-    5: 5.80,
-    6: 5.99,
-    7: 7.20,
-    8: 7.90,
-    9: 8.40,
-    10: 8.85,
-    11: 9.40,
-    12: 9.85,
-    13: 11.40,
-    14: 11.90,
-    15: 12.75,
-    16: 12.80,
-    17: 12.85,
-    18: 12.90
+    0: 0.99,
+    1: 3.39, 2: 4.40, 3: 5.40, 4: 5.70, 5: 5.80, 6: 5.99,
+    7: 7.20, 8: 7.90, 9: 8.40, 10: 8.85, 11: 9.40, 12: 9.85,
+    13: 11.40, 14: 11.90, 15: 12.75, 16: 12.80, 17: 12.85, 18: 12.90
   };
 
   const EXTRA_LINK = {
-    1: 3.49,
-    2: 4.85,
-    3: 5.45,
-    4: 6.05,
-    5: 6.45,
-    6: 6.95,
-    7: 8.00,
-    8: 8.60,
-    9: 9.10,
-    10: 9.40,
-    11: 10.20,
-    12: 10.75
+    1: 3.49, 2: 4.85, 3: 5.45, 4: 6.05, 5: 6.45, 6: 6.95,
+    7: 8.00, 8: 8.60, 9: 9.10, 10: 9.40, 11: 10.20, 12: 10.75
   };
 
   // =========================
   // SENHA (trava visual)
   // =========================
-  const ADV_PIN = "358000"; // <- troque aqui
+  const ADV_PIN = "1234"; // <- troque aqui se quiser
   const ADV_KEY = "adv_unlocked_v1";
 
   // =========================
@@ -178,7 +273,6 @@
     return v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
   }
 
-  // Aceita: "1000", "1000.50", "1000,50", "1.000,50"
   function lerValor() {
     const raw = (document.getElementById("valor").value || "").trim();
     if (!raw) return null;
@@ -193,8 +287,161 @@
     return valorAvista / (1 - t);
   }
 
-  function montarTabela4(linhasHtml){
-    return `
+  // Arredondamento
+  function roundToStep(value, step){
+    if (!step || step <= 0) return value;
+    const inv = 1 / step;
+    return Math.round(value * inv) / inv;
+  }
+
+  function readUI(){
+    return {
+      maxParcelas: Number(document.getElementById("maxParcelas").value),
+      showDebito: document.getElementById("showDebito").value === "yes",
+      roundStep: Number(document.getElementById("roundStep").value),
+      adjustLast: document.getElementById("adjustLast").value === "yes",
+    };
+  }
+
+  async function copyText(text){
+    try{
+      await navigator.clipboard.writeText(text);
+      return true;
+    }catch(e){
+      // fallback simples
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      return true;
+    }
+  }
+
+  function moneyNumber(v){
+    // força 2 casas (centavos)
+    return Math.round(v * 100) / 100;
+  }
+
+  // =========================
+  // SELLER MODE STATE
+  // =========================
+  const sellerState = {
+    maquina: { text: "", enabled: false },
+    link: { text: "", enabled: false }
+  };
+
+  function setSeller(which, text){
+    const box = document.getElementById(which === "maquina" ? "sellerTextMaquina" : "sellerTextLink");
+    const btn = document.getElementById(which === "maquina" ? "copySellerMaquina" : "copySellerLink");
+    if (!text){
+      box.textContent = "Nenhuma opção selecionada.";
+      btn.disabled = true;
+      sellerState[which] = { text: "", enabled: false };
+      return;
+    }
+    box.textContent = text;
+    btn.disabled = false;
+    sellerState[which] = { text, enabled: true };
+  }
+
+  function sellerMessage({metodo, parcelasLabel, total, parcelaDisplay}){
+    // Mensagem curta e pronta pro WhatsApp
+    // Ex: "No cartão: 6x de R$ 199,90 (total R$ 1.199,40)."
+    return `No ${metodo}: ${parcelasLabel} de ${parcelaDisplay} (total ${formatar(total)}).`;
+  }
+
+  // =========================
+  // TABELAS PRINCIPAIS (com copiar e vendedor)
+  // =========================
+  function renderMainTable({idTarget, metodoNome, includeDebito, taxasCredito, taxaDebito, valorAvista, maxParcelas}){
+    const ui = readUI();
+    const target = document.getElementById(idTarget);
+
+    if (!valorAvista){
+      target.innerHTML = "Digite um valor acima.";
+      return { rows: [], whatsapp: "" };
+    }
+
+    const rows = [];
+
+    if (includeDebito && ui.showDebito && typeof taxaDebito === "number"){
+      const vf = moneyNumber(valorFinalEmbutido(valorAvista, taxaDebito));
+      rows.push({
+        key: "debito",
+        parcelas: 0,
+        parcelasLabel: "Débito",
+        taxa: taxaDebito,
+        valorFinal: vf,
+        parcelaInfo: { display: "-", parcelValue: null, last: null },
+      });
+    }
+
+    const parcelasList = Object.keys(taxasCredito).map(Number).sort((a,b)=>a-b)
+      .filter(p => p <= maxParcelas);
+
+    for (const p of parcelasList){
+      const taxa = taxasCredito[p];
+      const vfRaw = valorFinalEmbutido(valorAvista, taxa);
+      const vf = moneyNumber(vfRaw);
+
+      // Parcela base
+      const parcelaBase = vf / p;
+
+      // Arredondamento (se ligado)
+      let parcelaRounded = parcelaBase;
+      let last = null;
+
+      if (ui.roundStep > 0){
+        parcelaRounded = roundToStep(parcelaBase, ui.roundStep);
+
+        if (ui.adjustLast && p > 1){
+          // ajusta última parcela pra fechar exatamente o total
+          last = moneyNumber(vf - parcelaRounded * (p - 1));
+        }
+      }
+
+      let parcelaDisplay = formatar(moneyNumber(parcelaRounded));
+      if (ui.roundStep > 0 && ui.adjustLast && p > 1){
+        parcelaDisplay = `${p-1}x ${formatar(moneyNumber(parcelaRounded))} + última ${formatar(last)}`;
+      }
+
+      rows.push({
+        key: String(p),
+        parcelas: p,
+        parcelasLabel: `${p}x`,
+        taxa,
+        valorFinal: vf,
+        parcelaInfo: { display: parcelaDisplay, parcelValue: moneyNumber(parcelaRounded), last },
+      });
+    }
+
+    // Melhor custo (menor valor final) entre as linhas de crédito exibidas
+    const creditRows = rows.filter(r => r.parcelas >= 1);
+    let bestKey = null;
+    if (creditRows.length){
+      let best = creditRows[0];
+      for (const r of creditRows){
+        if (r.valorFinal < best.valorFinal) best = r;
+      }
+      bestKey = best.key;
+    }
+
+    // WhatsApp text
+    const whatsappLines = [];
+    whatsappLines.push(`${metodoNome} — Valor à vista: ${formatar(valorAvista)}`);
+    for (const r of rows){
+      if (r.parcelas === 0){
+        whatsappLines.push(`• Débito — Total ${formatar(r.valorFinal)}`);
+      } else {
+        whatsappLines.push(`• ${r.parcelasLabel} — Total ${formatar(r.valorFinal)} | Parcela: ${r.parcelaInfo.display}`);
+      }
+    }
+    const whatsapp = whatsappLines.join("\n");
+
+    // Render HTML
+    let html = `
       <table>
         <thead>
           <tr>
@@ -202,29 +449,104 @@
             <th>Taxa</th>
             <th>Valor Final</th>
             <th>Parcela</th>
+            <th>Ações</th>
           </tr>
         </thead>
         <tbody>
-          ${linhasHtml}
-        </tbody>
-      </table>
     `;
+
+    for (const r of rows){
+      const isUsed = (r.parcelas >= 1 && r.parcelas <= 3);
+      const isBest = (bestKey && r.key === bestKey);
+
+      const trClass = `${isBest ? "best" : ""} ${isUsed ? "used" : ""}`.trim();
+
+      const copyLineText = (r.parcelas === 0)
+        ? `${metodoNome} — Débito: Total ${formatar(r.valorFinal)} (à vista ${formatar(valorAvista)})`
+        : `${metodoNome} — ${r.parcelasLabel}: Total ${formatar(r.valorFinal)} | Parcela: ${r.parcelaInfo.display} (à vista ${formatar(valorAvista)})`;
+
+      const sellerText = (r.parcelas === 0)
+        ? `No ${metodoNome} (débito): total ${formatar(r.valorFinal)}.`
+        : sellerMessage({
+            metodo: metodoNome,
+            parcelasLabel: r.parcelasLabel,
+            total: r.valorFinal,
+            parcelaDisplay: r.parcelaInfo.display
+          });
+
+      html += `
+        <tr class="${trClass}">
+          <td>${r.parcelasLabel}</td>
+          <td>${r.taxa.toFixed(2)}%</td>
+          <td>${formatar(r.valorFinal)}</td>
+          <td>${r.parcelaInfo.display}</td>
+          <td>
+            <div class="actionsCell">
+              <button class="btn btn-small btn-ghost" data-copyline="${encodeURIComponent(copyLineText)}">Copiar linha</button>
+              <button class="btn btn-small" data-seller="${encodeURIComponent(sellerText)}" data-which="${idTarget === 'maquina' ? 'maquina' : 'link'}">Usar no vendedor</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }
+
+    html += `</tbody></table>`;
+    target.innerHTML = html;
+
+    // Bind buttons inside table
+    target.querySelectorAll("[data-copyline]").forEach(btn=>{
+      btn.addEventListener("click", async ()=>{
+        const text = decodeURIComponent(btn.getAttribute("data-copyline"));
+        await copyText(text);
+      });
+    });
+
+    target.querySelectorAll("[data-seller]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const text = decodeURIComponent(btn.getAttribute("data-seller"));
+        const which = btn.getAttribute("data-which");
+        setSeller(which, text);
+      });
+    });
+
+    return { rows, whatsapp };
   }
 
-  function linha4(parcelasLabel, taxaPercent, valorFinal, parcela){
-    const parcelaTxt = parcela == null ? "-" : formatar(parcela);
-    return `
-      <tr>
-        <td>${parcelasLabel}</td>
-        <td>${taxaPercent.toFixed(2)}%</td>
-        <td>${formatar(valorFinal)}</td>
-        <td>${parcelaTxt}</td>
-      </tr>
-    `;
+  // =========================
+  // ÁREA AVANÇADA (taxa extra em % sobre Valor Final)
+  // =========================
+  function taxaExtra(obj, key){
+    const v = obj[key];
+    return (typeof v === "number" && isFinite(v)) ? v : 0;
   }
 
-  function montarTabela2(linhasHtml){
-    return `
+  function renderExtraTable({idTarget, metodoNome, includeDebito, taxasCredito, taxaDebitoMain, extraMap, valorAvista, maxParcelas}){
+    const target = document.getElementById(idTarget);
+    if (!valorAvista){
+      target.innerHTML = "<p>Digite um valor acima.</p>";
+      return { whatsapp: "" };
+    }
+
+    const rows = [];
+
+    if (includeDebito && typeof taxaDebitoMain === "number"){
+      const vf = moneyNumber(valorFinalEmbutido(valorAvista, taxaDebitoMain));
+      const te = taxaExtra(extraMap, 0);
+      const recebe = moneyNumber(vf - (vf * (te/100)));
+      rows.push({ parcelasLabel:"Débito", recebe, extra: te });
+    }
+
+    const parcelasList = Object.keys(taxasCredito).map(Number).sort((a,b)=>a-b)
+      .filter(p => p <= maxParcelas);
+
+    for (const p of parcelasList){
+      const vf = moneyNumber(valorFinalEmbutido(valorAvista, taxasCredito[p]));
+      const te = taxaExtra(extraMap, p);
+      const recebe = moneyNumber(vf - (vf * (te/100)));
+      rows.push({ parcelasLabel:`${p}x`, recebe, extra: te });
+    }
+
+    let html = `
       <table>
         <thead>
           <tr>
@@ -233,118 +555,26 @@
           </tr>
         </thead>
         <tbody>
-          ${linhasHtml}
-        </tbody>
-      </table>
     `;
-  }
 
-  function linha2(parcelasLabel, valorRecebe){
-    return `
-      <tr>
-        <td>${parcelasLabel}</td>
-        <td><strong>${formatar(valorRecebe)}</strong></td>
-      </tr>
-    `;
-  }
-
-  function taxaExtra(obj, key){
-    const v = obj[key];
-    return (typeof v === "number" && isFinite(v)) ? v : 0;
-  }
-
-  // =========================
-  // RENDER TABELAS PRINCIPAIS (de cima)
-  // =========================
-  function atualizar(){
-    const alvoMaquina = document.getElementById("maquina");
-    const alvoLink = document.getElementById("link");
-    const valor = lerValor();
-
-    if (!valor){
-      alvoMaquina.innerHTML = "Digite um valor acima.";
-      alvoLink.innerHTML = "Digite um valor acima.";
-      renderAvancado(null);
-      return;
+    for (const r of rows){
+      html += `
+        <tr>
+          <td>${r.parcelasLabel}</td>
+          <td><strong>${formatar(r.recebe)}</strong></td>
+        </tr>
+      `;
     }
 
-    // Máquina Física (Débito + Crédito)
-    let linhasM = "";
-    const vfDeb = valorFinalEmbutido(valor, MAQUINA.debito);
-    linhasM += linha4("Débito", MAQUINA.debito, vfDeb, null);
+    html += `</tbody></table>`;
+    target.innerHTML = html;
 
-    Object.keys(MAQUINA.credito).map(Number).sort((a,b)=>a-b).forEach(p=>{
-      const taxa = MAQUINA.credito[p];
-      const vf = valorFinalEmbutido(valor, taxa);
-      const parc = vf / p;
-      linhasM += linha4(`${p}x`, taxa, vf, parc);
-    });
-
-    alvoMaquina.innerHTML = montarTabela4(linhasM);
-
-    // Link (Crédito)
-    let linhasL = "";
-    Object.keys(LINK.credito).map(Number).sort((a,b)=>a-b).forEach(p=>{
-      const taxa = LINK.credito[p];
-      const vf = valorFinalEmbutido(valor, taxa);
-      const parc = vf / p;
-      linhasL += linha4(`${p}x`, taxa, vf, parc);
-    });
-
-    alvoLink.innerHTML = montarTabela4(linhasL);
-
-    renderAvancado(valor);
-  }
-
-  // =========================
-  // RENDER ÁREA AVANÇADA (subtrai taxa extra do Valor Final da tabela de cima)
-  // valor_recebe = valorFinal - (valorFinal * taxaExtra)
-  // =========================
-  function renderAvancado(valorAvista){
-    const boxM = document.getElementById("maquinaExtra");
-    const boxL = document.getElementById("linkExtra");
-
-    if (!isUnlocked()){
-      return;
+    const whatsappLines = [];
+    whatsappLines.push(`${metodoNome} (Extra) — à vista: ${formatar(valorAvista)}`);
+    for (const r of rows){
+      whatsappLines.push(`• ${r.parcelasLabel} — Recebe: ${formatar(r.recebe)}`);
     }
-
-    if (!valorAvista){
-      boxM.innerHTML = "<p>Digite um valor acima.</p>";
-      boxL.innerHTML = "<p>Digite um valor acima.</p>";
-      return;
-    }
-
-    // Máquina
-    let linhasM = "";
-
-    // Débito
-    {
-      const vf = valorFinalEmbutido(valorAvista, MAQUINA.debito); // Valor Final (tabela de cima)
-      const te = taxaExtra(EXTRA_MAQUINA, 0);                     // taxa extra do débito
-      const recebe = vf - (vf * (te/100));
-      linhasM += linha2("Débito", recebe);
-    }
-
-    // Crédito
-    Object.keys(MAQUINA.credito).map(Number).sort((a,b)=>a-b).forEach(p=>{
-      const vf = valorFinalEmbutido(valorAvista, MAQUINA.credito[p]); // Valor Final (tabela de cima)
-      const te = taxaExtra(EXTRA_MAQUINA, p);                         // taxa extra por parcela
-      const recebe = vf - (vf * (te/100));
-      linhasM += linha2(`${p}x`, recebe);
-    });
-
-    boxM.innerHTML = montarTabela2(linhasM);
-
-    // Link
-    let linhasL = "";
-    Object.keys(LINK.credito).map(Number).sort((a,b)=>a-b).forEach(p=>{
-      const vf = valorFinalEmbutido(valorAvista, LINK.credito[p]); // Valor Final (tabela de cima)
-      const te = taxaExtra(EXTRA_LINK, p);                         // taxa extra por parcela
-      const recebe = vf - (vf * (te/100));
-      linhasL += linha2(`${p}x`, recebe);
-    });
-
-    boxL.innerHTML = montarTabela2(linhasL);
+    return { whatsapp: whatsappLines.join("\n") };
   }
 
   // =========================
@@ -363,16 +593,110 @@
     if (isUnlocked()){
       lockBox.style.display = "none";
       advancedBox.style.display = "block";
-      renderAvancado(lerValor());
+      renderAll(); // garante que renderiza extra também
     } else {
       lockBox.style.display = "block";
       advancedBox.style.display = "none";
     }
   }
 
-  document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("valor").addEventListener("input", atualizar);
+  // =========================
+  // RENDER ALL + COPY HANDLERS
+  // =========================
+  let lastWhats = { maquina:"", link:"", extraM:"", extraL:"" };
 
+  function renderAll(){
+    const ui = readUI();
+    const valor = lerValor();
+
+    const maquina = renderMainTable({
+      idTarget: "maquina",
+      metodoNome: "Máquina",
+      includeDebito: true,
+      taxasCredito: MAQUINA.credito,
+      taxaDebito: MAQUINA.debito,
+      valorAvista: valor,
+      maxParcelas: ui.maxParcelas
+    });
+
+    const link = renderMainTable({
+      idTarget: "link",
+      metodoNome: "Link",
+      includeDebito: false,
+      taxasCredito: LINK.credito,
+      taxaDebito: null,
+      valorAvista: valor,
+      maxParcelas: Math.min(ui.maxParcelas, 12)
+    });
+
+    lastWhats.maquina = maquina.whatsapp;
+    lastWhats.link = link.whatsapp;
+
+    // Área extra somente se desbloqueada
+    if (isUnlocked()){
+      const extraM = renderExtraTable({
+        idTarget: "maquinaExtra",
+        metodoNome: "Máquina",
+        includeDebito: true,
+        taxasCredito: MAQUINA.credito,
+        taxaDebitoMain: MAQUINA.debito,
+        extraMap: EXTRA_MAQUINA,
+        valorAvista: valor,
+        maxParcelas: ui.maxParcelas
+      });
+
+      const extraL = renderExtraTable({
+        idTarget: "linkExtra",
+        metodoNome: "Link",
+        includeDebito: false,
+        taxasCredito: LINK.credito,
+        taxaDebitoMain: null,
+        extraMap: EXTRA_LINK,
+        valorAvista: valor,
+        maxParcelas: Math.min(ui.maxParcelas, 12)
+      });
+
+      lastWhats.extraM = extraM.whatsapp;
+      lastWhats.extraL = extraL.whatsapp;
+    }
+  }
+
+  // =========================
+  // EVENTS
+  // =========================
+  document.addEventListener("DOMContentLoaded", () => {
+    // input & selects
+    ["valor","maxParcelas","showDebito","roundStep","adjustLast"].forEach(id=>{
+      document.getElementById(id).addEventListener("input", renderAll);
+      document.getElementById(id).addEventListener("change", renderAll);
+    });
+
+    // Copy table buttons
+    document.getElementById("copyTableMaquina").addEventListener("click", async ()=>{
+      const v = lerValor();
+      if (!v) return;
+      await copyText(lastWhats.maquina);
+    });
+
+    document.getElementById("copyTableLink").addEventListener("click", async ()=>{
+      const v = lerValor();
+      if (!v) return;
+      await copyText(lastWhats.link);
+    });
+
+    // Seller copy buttons
+    document.getElementById("copySellerMaquina").addEventListener("click", async ()=>{
+      if (sellerState.maquina.enabled) await copyText(sellerState.maquina.text);
+    });
+    document.getElementById("copySellerLink").addEventListener("click", async ()=>{
+      if (sellerState.link.enabled) await copyText(sellerState.link.text);
+    });
+
+    // Seller clear
+    document.getElementById("clearSellerMaquina").addEventListener("click", ()=> setSeller("maquina",""));
+    document.getElementById("clearSellerLink").addEventListener("click", ()=> setSeller("link",""));
+
+    // Accordion lock
     document.getElementById("btnUnlock").addEventListener("click", () => {
       const pin = (document.getElementById("pin").value || "").trim();
       const msg = document.getElementById("lockMsg");
@@ -391,8 +715,20 @@
       updateLockUI();
     });
 
+    // Extra copy buttons
+    document.getElementById("copyExtraMaquina").addEventListener("click", async ()=>{
+      const v = lerValor();
+      if (!v) return;
+      await copyText(lastWhats.extraM || "");
+    });
+    document.getElementById("copyExtraLink").addEventListener("click", async ()=>{
+      const v = lerValor();
+      if (!v) return;
+      await copyText(lastWhats.extraL || "");
+    });
+
     updateLockUI();
-    atualizar();
+    renderAll();
   });
 </script>
 
