@@ -21,7 +21,6 @@
     .hint{font-size:12px;color:#666;margin-top:8px}
     @media(max-width:900px){.grid{grid-template-columns:1fr}}
 
-    /* Top tabs */
     .tabsWrap{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
     .tabBtn{
       border:1px solid #e5e7eb;background:#fff;padding:10px 14px;border-radius:999px;
@@ -29,7 +28,6 @@
     }
     .tabBtn.active{background:#2563eb;border-color:#2563eb;color:#fff}
 
-    /* Accordion */
     details.accordion{border:1px solid #e5e7eb;border-radius:14px;overflow:hidden}
     details.accordion > summary{
       list-style:none;cursor:pointer;padding:14px 16px;background:#f9fafb;
@@ -44,7 +42,6 @@
     .err{margin-top:10px;color:#b91c1c;font-size:13px}
     .hidden{display:none !important;}
 
-    /* Trade */
     .kpi{padding:14px;border:1px solid #e5e7eb;border-radius:14px;background:#fafafa;margin-top:12px}
     .kpi strong{font-size:20px}
     .breakdown{margin-top:10px;color:#333;font-size:14px;line-height:1.4}
@@ -57,7 +54,6 @@
 <body>
   <div class="container">
 
-    <!-- TOP NAV -->
     <div class="tabsWrap">
       <button class="tabBtn active" id="tabCalc">Calculadora</button>
       <button class="tabBtn" id="tabTrade">Troca de Aparelhos</button>
@@ -174,15 +170,15 @@
     </section>
 
     <!-- =========================
-         TAB 2: TROCA (AUTOMÁTICO)
+         TAB 2: TROCA
     ========================== -->
     <section id="viewTrade" class="hidden">
       <div class="card">
         <h1>Troca de Aparelhos</h1>
         <p>
           Selecione o modelo e o armazenamento. O valor é calculado automaticamente.
-          <br><span class="pill">Base 64GB</span>
-          <span class="pill">+R$ 50 se GB &gt; 64 (quando aplicável)</span>
+          <br><span class="pill">GB reais por modelo</span>
+          <span class="pill">+R$ 50 se GB &gt; 64 (modelo base64)</span>
           <span class="pill">Bateria em manutenção: −R$ 150 (somente iPhone 13+)</span>
         </p>
 
@@ -210,7 +206,7 @@
         </div>
 
         <div class="hint" style="margin-top:10px;">
-          Lembrete: “sempre mandar a avaliação” e aplicar descontos por avarias (vamos adicionar isso na próxima etapa).
+          Próxima etapa: avarias/peças (tela, carcaça, câmera, Face ID etc.) com descontos automáticos.
         </div>
       </div>
     </section>
@@ -260,39 +256,40 @@
   const ADV_KEY_2 = "disc_unlocked_v2";
 
   // =========================
-  // TROCA - BASE DE MODELOS
+  // TROCA - MODELOS (GB reais)
   // =========================
-  // Regra:
-  // - Modelos "base64": valor base é 64GB, e se GB > 64 => +50
-  // - Modelos "fixedByGB": usa valor exato por GB (sem +50 por fora)
-  //
-  // Valores enviados por você:
   const TRADE_MODELS = [
-    { id:"XR_XS", name:"iPhone XR / XS", type:"base64", base:200, minGen:10 },
-    { id:"XS_MAX", name:"iPhone XS Max", type:"base64", base:300, minGen:10 },
-    { id:"11", name:"iPhone 11", type:"base64", base:450, minGen:11 },
-    { id:"11_PRO", name:"iPhone 11 Pro", type:"base64", base:650, minGen:11 },
-    { id:"11_PRO_MAX", name:"iPhone 11 Pro Max", type:"base64", base:750, minGen:11 },
-    { id:"12", name:"iPhone 12", type:"base64", base:700, minGen:12 },
-    { id:"12_PRO", name:"iPhone 12 Pro", type:"base64", base:900, minGen:12 },
-    { id:"12_PRO_MAX", name:"iPhone 12 Pro Max", type:"base64", base:1200, minGen:12 },
-    { id:"13", name:"iPhone 13", type:"base64", base:1400, minGen:13 },
-    { id:"13_PRO", name:"iPhone 13 Pro", type:"base64", base:1700, minGen:13 },
-    { id:"13_PRO_MAX", name:"iPhone 13 Pro Max", type:"base64", base:1900, minGen:13 },
-    { id:"14", name:"iPhone 14", type:"base64", base:1700, minGen:14 },
-    { id:"14_PRO", name:"iPhone 14 Pro", type:"base64", base:2400, minGen:14 },
-    { id:"14_PRO_MAX", name:"iPhone 14 Pro Max", type:"base64", base:2850, minGen:14 },
-    { id:"15", name:"iPhone 15", type:"base64", base:2350, minGen:15 },
+    // Preços seus (base) + GB oficiais do modelo
+    { id:"XR", name:"iPhone XR", type:"base64", base:200, minGen:10, storages:[64,128,256] },
+    { id:"XS", name:"iPhone XS", type:"base64", base:200, minGen:10, storages:[64,256,512] },
+    { id:"XS_MAX", name:"iPhone XS Max", type:"base64", base:300, minGen:10, storages:[64,256,512] },
 
-    { id:"15_PRO", name:"iPhone 15 Pro", type:"fixedByGB", prices:{128:2750,256:2950}, minGen:15 },
-    { id:"15_PRO_MAX", name:"iPhone 15 Pro Max", type:"fixedByGB", prices:{256:3900,512:4100}, minGen:15 },
+    { id:"11", name:"iPhone 11", type:"base64", base:450, minGen:11, storages:[64,128,256] },
+    { id:"11_PRO", name:"iPhone 11 Pro", type:"base64", base:650, minGen:11, storages:[64,256,512] },
+    { id:"11_PRO_MAX", name:"iPhone 11 Pro Max", type:"base64", base:750, minGen:11, storages:[64,256,512] },
 
-    { id:"16", name:"iPhone 16", type:"fixedByGB", prices:{128:3400,256:3500}, minGen:16 },
-    { id:"16_PRO", name:"iPhone 16 Pro", type:"fixedByGB", prices:{128:4100,256:4250}, minGen:16 },
-    { id:"16_PRO_MAX", name:"iPhone 16 Pro Max", type:"fixedByGB", prices:{256:5000,512:5200}, minGen:16 }
+    { id:"12", name:"iPhone 12", type:"base64", base:700, minGen:12, storages:[64,128,256] },
+    { id:"12_PRO", name:"iPhone 12 Pro", type:"base64", base:900, minGen:12, storages:[128,256,512] },
+    { id:"12_PRO_MAX", name:"iPhone 12 Pro Max", type:"base64", base:1200, minGen:12, storages:[128,256,512] },
+
+    { id:"13", name:"iPhone 13", type:"base64", base:1400, minGen:13, storages:[128,256,512] },
+    { id:"13_PRO", name:"iPhone 13 Pro", type:"base64", base:1700, minGen:13, storages:[128,256,512,1024] },
+    { id:"13_PRO_MAX", name:"iPhone 13 Pro Max", type:"base64", base:1900, minGen:13, storages:[128,256,512,1024] },
+
+    { id:"14", name:"iPhone 14", type:"base64", base:1700, minGen:14, storages:[128,256,512] },
+    { id:"14_PRO", name:"iPhone 14 Pro", type:"base64", base:2400, minGen:14, storages:[128,256,512,1024] },
+    { id:"14_PRO_MAX", name:"iPhone 14 Pro Max", type:"base64", base:2850, minGen:14, storages:[128,256,512,1024] },
+
+    { id:"15", name:"iPhone 15", type:"base64", base:2350, minGen:15, storages:[128,256,512] },
+
+    // Modelos com preço fixo por GB (somente onde você cadastrou preço)
+    { id:"15_PRO", name:"iPhone 15 Pro", type:"fixedByGB", minGen:15, prices:{128:2750,256:2950} },
+    { id:"15_PRO_MAX", name:"iPhone 15 Pro Max", type:"fixedByGB", minGen:15, prices:{256:3900,512:4100} },
+
+    { id:"16", name:"iPhone 16", type:"fixedByGB", minGen:16, prices:{128:3400,256:3500} },
+    { id:"16_PRO", name:"iPhone 16 Pro", type:"fixedByGB", minGen:16, prices:{128:4100,256:4250} },
+    { id:"16_PRO_MAX", name:"iPhone 16 Pro Max", type:"fixedByGB", minGen:16, prices:{256:5000,512:5200} }
   ];
-
-  const STORAGE_DEFAULT = [64,128,256,512];
 
   // =========================
   // HELPERS
@@ -301,7 +298,6 @@
     return v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
   }
 
-  // Aceita: 1000 / 1000,50 / 1.000,50
   function parseBRL(raw) {
     const t = (raw || "").trim();
     if (!t) return null;
@@ -540,7 +536,7 @@
   }
 
   // =========================
-  // TROCA (tab 2) - AUTO
+  // TROCA (tab 2)
   // =========================
   function populateTradeModels(){
     const sel = document.getElementById("trade_model");
@@ -566,16 +562,16 @@
 
     if (model.type === "fixedByGB"){
       storages = Object.keys(model.prices).map(Number).sort((a,b)=>a-b);
-      hint.textContent = "Valor fixo por GB para este modelo (não aplica +R$ 50).";
+      hint.textContent = "Preço fixo por GB (somente GB com valor cadastrado).";
     } else {
-      storages = STORAGE_DEFAULT.slice();
-      hint.textContent = "Base 64GB. Se for maior que 64GB, soma +R$ 50 no valor pago.";
+      storages = (model.storages || [128,256,512]).slice().sort((a,b)=>a-b);
+      hint.textContent = "Modelo base64: se GB > 64, soma +R$ 50 no valor pago.";
     }
 
     for (const s of storages){
       const opt = document.createElement("option");
       opt.value = String(s);
-      opt.textContent = `${s}GB`;
+      opt.textContent = (s === 1024) ? "1TB" : `${s}GB`;
       storageSel.appendChild(opt);
     }
   }
@@ -598,12 +594,11 @@
     } else {
       base = model.base;
       if (storage && storage > 64){
-        addStorage = 50; // regra: acima de 64, soma 50 (uma vez)
+        addStorage = 50;
       }
       note = "Base 64GB (+50 se >64GB)";
     }
 
-    // bateria manutenção: -150 apenas 13+
     if (batteryMaint && model.minGen >= 13){
       batteryDiscount = 150;
     }
@@ -612,9 +607,11 @@
 
     document.getElementById("trade_price").textContent = formatar(finalPrice);
 
+    const storageLabel = (storage === 1024) ? "1TB" : `${storage}GB`;
+
     const breakdownLines = [];
     breakdownLines.push(`Modelo: ${model.name}`);
-    breakdownLines.push(`Armazenamento: ${storage}GB`);
+    breakdownLines.push(`Armazenamento: ${storageLabel}`);
     breakdownLines.push(`Regra: ${note}`);
     breakdownLines.push(`Base: ${formatar(base)}`);
     if (addStorage > 0) breakdownLines.push(`+ Extra GB: ${formatar(addStorage)}`);
@@ -671,7 +668,6 @@
     const storageSel = document.getElementById("trade_storage");
     const batterySel = document.getElementById("trade_battery");
 
-    // set initial storages and calc
     populateStorageForModel(getModelById(modelSel.value));
     calcTradePrice();
 
