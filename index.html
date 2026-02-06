@@ -43,7 +43,6 @@ th{background:#eef2ff}
 </div>
 
 <script>
-
 // ===== TAXAS =====
 const MAQUINA = {
   debito: 1.30,
@@ -52,59 +51,108 @@ const MAQUINA = {
     7:9.40,8:10.30,9:11.20,10:12.10,11:13.10,
     12:13.90,13:15.70,14:16.80,15:17.90,
     16:18.80,17:19.01,18:19.90
+  }
 };
 
 const LINK = {
-  1:6.50,2:9.55,3:10.40,4:11.30,5:12.20,
-  6:13.10,7:14.00,8:15.90,9:16.80,
-  10:17.50,11:18.60,12:19.50
+  credito: {
+    1:6.50,2:9.55,3:10.40,4:11.30,5:12.20,
+    6:13.10,7:14.00,8:15.90,9:16.80,
+    10:17.50,11:18.60,12:19.50
+  }
 };
 
-// ===== FUNÇÕES =====
-
-function formatar(valor){
-  return valor.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+// ===== HELPERS =====
+function formatar(v){
+  return v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 }
 
-function calcularTabela(taxas){
-  const valor = parseFloat(document.getElementById("valor").value);
-  if(!valor || valor <= 0) return "<p>Digite um valor acima.</p>";
+// Aceita "1000", "1000.50" e "1000,50"
+function lerValor() {
+  const raw = (document.getElementById("valor").value || "").trim();
+  if (!raw) return null;
+  const normalizado = raw.replace(/\./g, "").replace(",", "."); // tira milhar e troca vírgula por ponto
+  const v = Number(normalizado);
+  return Number.isFinite(v) && v > 0 ? v : null;
+}
 
-  let linhas = `
-  <table>
-  <tr>
-    <th>Parcelas</th>
-    <th>Taxa</th>
-    <th>Valor Final</th>
-    <th>Parcela</th>
-  </tr>`;
-
-  Object.keys(taxas).forEach(p => {
-    let taxa = taxas[p]/100;
-    let valorFinal = valor / (1 - taxa);
-    let parcela = valorFinal / p;
-
-    linhas += `
+function linha(parcelasLabel, taxaPercent, valorFinal, parcela){
+  const parcelaTxt = parcela == null ? "-" : formatar(parcela);
+  return `
     <tr>
-      <td>${p}x</td>
-      <td>${taxas[p]}%</td>
+      <td>${parcelasLabel}</td>
+      <td>${taxaPercent.toFixed(2)}%</td>
       <td>${formatar(valorFinal)}</td>
-      <td>${formatar(parcela)}</td>
-    </tr>`;
-  });
+      <td>${parcelaTxt}</td>
+    </tr>
+  `;
+}
 
-  linhas += "</table>";
-  return linhas;
+function montarTabela(linhasHtml){
+  return `
+    <table>
+      <thead>
+        <tr>
+          <th>Parcelas</th>
+          <th>Taxa</th>
+          <th>Valor Final</th>
+          <th>Parcela</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${linhasHtml}
+      </tbody>
+    </table>
+  `;
 }
 
 function atualizar(){
-  document.getElementById("maquina").innerHTML = calcularTabela(MAQUINA);
-  document.getElementById("link").innerHTML = calcularTabela(LINK);
+  const alvoMaquina = document.getElementById("maquina");
+  const alvoLink = document.getElementById("link");
+  const valor = lerValor();
+
+  if (!alvoMaquina || !alvoLink) return;
+
+  if (!valor){
+    alvoMaquina.innerHTML = "<p>Digite um valor acima.</p>";
+    alvoLink.innerHTML = "<p>Digite um valor acima.</p>";
+    return;
+  }
+
+  // ---- Máquina (Débito + Crédito)
+  let linhasM = "";
+  // Débito (embutindo taxa)
+  const tDeb = MAQUINA.debito / 100;
+  const valorFinalDeb = valor / (1 - tDeb);
+  linhasM += linha("Débito", MAQUINA.debito, valorFinalDeb, null);
+
+  // Crédito
+  Object.keys(MAQUINA.credito).map(Number).sort((a,b)=>a-b).forEach(p=>{
+    const taxa = MAQUINA.credito[p];
+    const t = taxa / 100;
+    const valorFinal = valor / (1 - t);
+    const parc = valorFinal / p;
+    linhasM += linha(`${p}x`, taxa, valorFinal, parc);
+  });
+
+  alvoMaquina.innerHTML = montarTabela(linhasM);
+
+  // ---- Link (Crédito)
+  let linhasL = "";
+  Object.keys(LINK.credito).map(Number).sort((a,b)=>a-b).forEach(p=>{
+    const taxa = LINK.credito[p];
+    const t = taxa / 100;
+    const valorFinal = valor / (1 - t);
+    const parc = valorFinal / p;
+    linhasL += linha(`${p}x`, taxa, valorFinal, parc);
+  });
+
+  alvoLink.innerHTML = montarTabela(linhasL);
 }
 
-document.getElementById("valor").addEventListener("input", atualizar);
-
+document.addEventListener("DOMContentLoaded", () => {
+  const el = document.getElementById("valor");
+  if (el) el.addEventListener("input", atualizar);
+  atualizar(); // render inicial
+});
 </script>
-
-</body>
-</html>
