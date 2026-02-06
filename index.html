@@ -1,158 +1,170 @@
 <!doctype html>
 <html lang="pt-br">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Calculadora de Taxas</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calculadora de Taxas</title>
 
-<style>
-body{font-family:Arial;background:#f5f6fa;padding:20px}
-.container{max-width:1100px;margin:auto}
-.card{background:white;padding:20px;border-radius:15px;box-shadow:0 8px 20px rgba(0,0,0,0.08);margin-bottom:20px}
-h1{margin-bottom:10px}
-input{width:100%;padding:12px;border-radius:10px;border:1px solid #ddd;font-size:16px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-table{width:100%;border-collapse:collapse;margin-top:10px}
-th,td{padding:8px;border-bottom:1px solid #eee;text-align:left}
-th{background:#eef2ff}
-@media(max-width:900px){.grid{grid-template-columns:1fr}}
-</style>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;background:#f5f6fa;padding:20px;margin:0}
+    .container{max-width:1100px;margin:auto}
+    .card{background:white;padding:20px;border-radius:15px;box-shadow:0 8px 20px rgba(0,0,0,0.08);margin-bottom:20px}
+    h1{margin:0 0 10px 0}
+    p{margin:0 0 16px 0;color:#555}
+    label{display:block;margin:10px 0 6px 0;font-size:13px;color:#222}
+    input{width:100%;padding:12px;border-radius:10px;border:1px solid #ddd;font-size:16px;outline:none}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    table{width:100%;border-collapse:collapse;margin-top:10px}
+    th,td{padding:10px;border-bottom:1px solid #eee;text-align:left;font-size:14px}
+    th{background:#eef2ff;color:#1f2a6a}
+    .hint{font-size:12px;color:#666;margin-top:8px}
+    @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  </style>
 </head>
 
 <body>
-<div class="container">
+  <div class="container">
 
-<div class="card">
-<h1>Calculadora de Taxas</h1>
-<label>Valor à vista (R$)</label>
-<input type="number" id="valor" step="0.01" placeholder="Ex: 1000">
-</div>
+    <div class="card">
+      <h1>Calculadora de Taxas</h1>
+      <p>Digite o <strong>valor à vista</strong>. A calculadora mostra o <strong>valor final</strong> (já com taxa embutida) e a <strong>parcela</strong>.</p>
 
-<div class="grid">
-<div class="card">
-<h2>Máquina Física</h2>
-<div id="maquina"></div>
-</div>
+      <label for="valor">Valor à vista (R$)</label>
+      <input type="text" id="valor" placeholder="Ex: 1000 ou 1000,50" />
+      <div class="hint">Você pode digitar com vírgula (ex: 1000,50). Não use símbolo R$.</div>
+    </div>
 
-<div class="card">
-<h2>Link de Pagamento</h2>
-<div id="link"></div>
-</div>
-</div>
+    <div class="grid">
+      <div class="card">
+        <h2 style="margin:0">Máquina Física</h2>
+        <div id="maquina" style="margin-top:10px;">Digite um valor acima.</div>
+      </div>
 
-</div>
+      <div class="card">
+        <h2 style="margin:0">Link de Pagamento</h2>
+        <div id="link" style="margin-top:10px;">Digite um valor acima.</div>
+      </div>
+    </div>
+
+  </div>
 
 <script>
-// ===== TAXAS =====
-const MAQUINA = {
-  debito: 1.30,
-  credito: {
-    1:3.69,2:5.19,3:5.95,4:6.70,5:7.65,6:8.55,
-    7:9.40,8:10.30,9:11.20,10:12.10,11:13.10,
-    12:13.90,13:15.70,14:16.80,15:17.90,
-    16:18.80,17:19.01,18:19.90
-  }
-};
+  // ===== TAXAS =====
+  // Máquina: inclui débito + crédito (1x a 18x)
+  const MAQUINA = {
+    debito: 1.30,
+    credito: {
+      1: 3.69, 2: 5.19, 3: 5.95, 4: 6.70, 5: 7.65, 6: 8.55,
+      7: 9.40, 8: 10.30, 9: 11.20, 10: 12.10, 11: 13.10, 12: 13.90,
+      13: 15.70, 14: 16.80, 15: 17.90, 16: 18.80, 17: 19.01, 18: 19.90
+    }
+  };
 
-const LINK = {
-  credito: {
-    1:6.50,2:9.55,3:10.40,4:11.30,5:12.20,
-    6:13.10,7:14.00,8:15.90,9:16.80,
-    10:17.50,11:18.60,12:19.50
-  }
-};
+  // Link: crédito (1x a 12x)
+  const LINK = {
+    credito: {
+      1: 6.50, 2: 9.55, 3: 10.40, 4: 11.30, 5: 12.20, 6: 13.10,
+      7: 14.00, 8: 15.90, 9: 16.80, 10: 17.50, 11: 18.60, 12: 19.50
+    }
+  };
 
-// ===== HELPERS =====
-function formatar(v){
-  return v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
-}
-
-// Aceita "1000", "1000.50" e "1000,50"
-function lerValor() {
-  const raw = (document.getElementById("valor").value || "").trim();
-  if (!raw) return null;
-  const normalizado = raw.replace(/\./g, "").replace(",", "."); // tira milhar e troca vírgula por ponto
-  const v = Number(normalizado);
-  return Number.isFinite(v) && v > 0 ? v : null;
-}
-
-function linha(parcelasLabel, taxaPercent, valorFinal, parcela){
-  const parcelaTxt = parcela == null ? "-" : formatar(parcela);
-  return `
-    <tr>
-      <td>${parcelasLabel}</td>
-      <td>${taxaPercent.toFixed(2)}%</td>
-      <td>${formatar(valorFinal)}</td>
-      <td>${parcelaTxt}</td>
-    </tr>
-  `;
-}
-
-function montarTabela(linhasHtml){
-  return `
-    <table>
-      <thead>
-        <tr>
-          <th>Parcelas</th>
-          <th>Taxa</th>
-          <th>Valor Final</th>
-          <th>Parcela</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${linhasHtml}
-      </tbody>
-    </table>
-  `;
-}
-
-function atualizar(){
-  const alvoMaquina = document.getElementById("maquina");
-  const alvoLink = document.getElementById("link");
-  const valor = lerValor();
-
-  if (!alvoMaquina || !alvoLink) return;
-
-  if (!valor){
-    alvoMaquina.innerHTML = "<p>Digite um valor acima.</p>";
-    alvoLink.innerHTML = "<p>Digite um valor acima.</p>";
-    return;
+  // ===== HELPERS =====
+  function formatar(v){
+    return v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
   }
 
-  // ---- Máquina (Débito + Crédito)
-  let linhasM = "";
-  // Débito (embutindo taxa)
-  const tDeb = MAQUINA.debito / 100;
-  const valorFinalDeb = valor / (1 - tDeb);
-  linhasM += linha("Débito", MAQUINA.debito, valorFinalDeb, null);
+  // Aceita: "1000", "1000.50", "1000,50", "1.000,50"
+  function lerValor() {
+    const raw = (document.getElementById("valor").value || "").trim();
+    if (!raw) return null;
+    const normalizado = raw.replace(/\./g, "").replace(",", ".");
+    const v = Number(normalizado);
+    return Number.isFinite(v) && v > 0 ? v : null;
+  }
 
-  // Crédito
-  Object.keys(MAQUINA.credito).map(Number).sort((a,b)=>a-b).forEach(p=>{
-    const taxa = MAQUINA.credito[p];
-    const t = taxa / 100;
-    const valorFinal = valor / (1 - t);
-    const parc = valorFinal / p;
-    linhasM += linha(`${p}x`, taxa, valorFinal, parc);
+  // Valor final com taxa embutida para você receber o valor à vista:
+  // valor_final = valor_avista / (1 - taxa)
+  function valorFinalEmbutido(valorAvista, taxaPercent){
+    const t = taxaPercent / 100;
+    return valorAvista / (1 - t);
+  }
+
+  function montarTabela(linhasHtml){
+    return `
+      <table>
+        <thead>
+          <tr>
+            <th>Parcelas</th>
+            <th>Taxa</th>
+            <th>Valor Final</th>
+            <th>Parcela</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${linhasHtml}
+        </tbody>
+      </table>
+    `;
+  }
+
+  function linha(parcelasLabel, taxaPercent, valorFinal, parcela){
+    const parcelaTxt = parcela == null ? "-" : formatar(parcela);
+    return `
+      <tr>
+        <td>${parcelasLabel}</td>
+        <td>${taxaPercent.toFixed(2)}%</td>
+        <td>${formatar(valorFinal)}</td>
+        <td>${parcelaTxt}</td>
+      </tr>
+    `;
+  }
+
+  function atualizar(){
+    const alvoMaquina = document.getElementById("maquina");
+    const alvoLink = document.getElementById("link");
+    const valor = lerValor();
+
+    if (!valor){
+      alvoMaquina.innerHTML = "Digite um valor acima.";
+      alvoLink.innerHTML = "Digite um valor acima.";
+      return;
+    }
+
+    // ---- Máquina Física (Débito + Crédito)
+    let linhasM = "";
+
+    // Débito
+    const vfDeb = valorFinalEmbutido(valor, MAQUINA.debito);
+    linhasM += linha("Débito", MAQUINA.debito, vfDeb, null);
+
+    // Crédito
+    Object.keys(MAQUINA.credito).map(Number).sort((a,b)=>a-b).forEach(p=>{
+      const taxa = MAQUINA.credito[p];
+      const vf = valorFinalEmbutido(valor, taxa);
+      const parc = vf / p;
+      linhasM += linha(`${p}x`, taxa, vf, parc);
+    });
+
+    alvoMaquina.innerHTML = montarTabela(linhasM);
+
+    // ---- Link de Pagamento (Crédito)
+    let linhasL = "";
+    Object.keys(LINK.credito).map(Number).sort((a,b)=>a-b).forEach(p=>{
+      const taxa = LINK.credito[p];
+      const vf = valorFinalEmbutido(valor, taxa);
+      const parc = vf / p;
+      linhasL += linha(`${p}x`, taxa, vf, parc);
+    });
+
+    alvoLink.innerHTML = montarTabela(linhasL);
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const el = document.getElementById("valor");
+    el.addEventListener("input", atualizar);
+    atualizar();
   });
-
-  alvoMaquina.innerHTML = montarTabela(linhasM);
-
-  // ---- Link (Crédito)
-  let linhasL = "";
-  Object.keys(LINK.credito).map(Number).sort((a,b)=>a-b).forEach(p=>{
-    const taxa = LINK.credito[p];
-    const t = taxa / 100;
-    const valorFinal = valor / (1 - t);
-    const parc = valorFinal / p;
-    linhasL += linha(`${p}x`, taxa, valorFinal, parc);
-  });
-
-  alvoLink.innerHTML = montarTabela(linhasL);
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  const el = document.getElementById("valor");
-  if (el) el.addEventListener("input", atualizar);
-  atualizar(); // render inicial
-});
 </script>
+
+</body>
+</html>
