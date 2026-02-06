@@ -3,11 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Calculadora de Taxas</title>
+  <title>Ferramentas - Taxas & Troca</title>
 
   <style>
     body{font-family:Arial,Helvetica,sans-serif;background:#f5f6fa;padding:20px;margin:0}
     .container{max-width:1100px;margin:auto}
+
     .card{background:white;padding:20px;border-radius:15px;box-shadow:0 8px 20px rgba(0,0,0,0.08);margin-bottom:20px}
     h1{margin:0 0 10px 0}
     p{margin:0 0 16px 0;color:#555}
@@ -19,6 +20,26 @@
     th{background:#eef2ff;color:#1f2a6a}
     .hint{font-size:12px;color:#666;margin-top:8px}
     @media(max-width:900px){.grid{grid-template-columns:1fr}}
+
+    /* Top tabs */
+    .tabsWrap{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+      margin-bottom:16px;
+    }
+    .tabBtn{
+      border:1px solid #e5e7eb;
+      background:#fff;
+      padding:10px 14px;
+      border-radius:999px;
+      cursor:pointer;
+      font-weight:700;
+      color:#111827;
+    }
+    .tabBtn.active{
+      background:#2563eb;
+      border-color:#2563eb;
+      color:#fff;
+    }
 
     /* Accordion */
     details.accordion{border:1px solid #e5e7eb;border-radius:14px;overflow:hidden}
@@ -33,121 +54,219 @@
     .btn{width:100%;margin-top:10px;padding:12px;border:0;border-radius:12px;background:#2563eb;color:#fff;font-weight:700;font-size:14px;cursor:pointer}
     .btn-dark{background:#111827}
     .err{margin-top:10px;color:#b91c1c;font-size:13px}
+
+    /* Small buttons */
+    .btnSmall{
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid #e5e7eb;
+      background:#fff;
+      cursor:pointer;
+      font-weight:700;
+    }
+
+    /* Hide/Show sections */
+    .hidden{display:none !important;}
+
+    /* Result boxes */
+    .kpi{
+      padding:14px;
+      border:1px solid #e5e7eb;
+      border-radius:14px;
+      background:#fafafa;
+      margin-top:12px;
+    }
+    .kpi strong{font-size:18px;}
+    .mono{white-space:pre-wrap; font-size:13px; background:#fff; border:1px solid #e5e7eb; padding:12px; border-radius:12px; margin-top:10px;}
   </style>
 </head>
 
 <body>
   <div class="container">
 
-    <div class="card">
-      <h1>Calculadora de Taxas</h1>
-      <p>Digite o <strong>valor à vista</strong>. A tabela mostra o <strong>valor final</strong> (com taxa embutida) e a <strong>parcela</strong>.</p>
-
-      <label for="valor">Valor à vista (R$)</label>
-      <input type="text" id="valor" placeholder="Ex: 1000 ou 1000,50" />
-      <div class="hint">Você pode digitar com vírgula (ex: 1000,50). Não use símbolo R$.</div>
+    <!-- TOP NAV -->
+    <div class="tabsWrap">
+      <button class="tabBtn active" id="tabCalc">Calculadora</button>
+      <button class="tabBtn" id="tabTrade">Troca de Aparelhos</button>
     </div>
 
-    <div class="grid">
+    <!-- =========================
+         TAB 1: CALCULADORA
+    ========================== -->
+    <section id="viewCalc">
       <div class="card">
-        <h2 style="margin:0">Máquina Física</h2>
-        <div id="maquina" style="margin-top:10px;">Digite um valor acima.</div>
+        <h1>Calculadora de Taxas</h1>
+        <p>Digite o <strong>valor à vista</strong>. A tabela mostra o <strong>valor final</strong> (com taxa embutida) e a <strong>parcela</strong>.</p>
+
+        <label for="valor">Valor à vista (R$)</label>
+        <input type="text" id="valor" placeholder="Ex: 1000 ou 1000,50" />
+        <div class="hint">Você pode digitar com vírgula (ex: 1000,50). Não use símbolo R$.</div>
       </div>
 
-      <div class="card">
-        <h2 style="margin:0">Link de Pagamento</h2>
-        <div id="link" style="margin-top:10px;">Digite um valor acima.</div>
+      <div class="grid">
+        <div class="card">
+          <h2 style="margin:0">Máquina Física</h2>
+          <div id="maquina" style="margin-top:10px;">Digite um valor acima.</div>
+        </div>
+
+        <div class="card">
+          <h2 style="margin:0">Link de Pagamento</h2>
+          <div id="link" style="margin-top:10px;">Digite um valor acima.</div>
+        </div>
       </div>
-    </div>
 
-    <!-- Accordion 1 -->
-    <div class="card" style="margin-top:20px;">
-      <details class="accordion" id="advAccordion">
-        <summary>
-          Área Avançada (Valor que recebe após taxa extra) <span class="chev">▾</span>
-        </summary>
+      <!-- Accordion 1 -->
+      <div class="card" style="margin-top:20px;">
+        <details class="accordion" id="advAccordion">
+          <summary>
+            Área Avançada (Valor que recebe após taxa extra) <span class="chev">▾</span>
+          </summary>
 
-        <div class="acc-body">
-          <p style="margin:0 0 12px;color:#555">
-            Aqui mostramos apenas <strong>Parcelas</strong> e <strong>Valor que recebe</strong>,
-            calculado como:<br>
-            <strong>Valor que recebe</strong> = <em>Valor Final (tabela de cima)</em> − <em>(Valor Final × taxa extra)</em>
-          </p>
+          <div class="acc-body">
+            <p style="margin:0 0 12px;color:#555">
+              Aqui mostramos apenas <strong>Parcelas</strong> e <strong>Valor que recebe</strong>,
+              calculado como:<br>
+              <strong>Valor que recebe</strong> = <em>Valor Final (tabela de cima)</em> − <em>(Valor Final × taxa extra)</em>
+            </p>
 
-          <div id="lockBox">
-            <label for="pin">Senha</label>
-            <input id="pin" type="password" placeholder="Digite a senha" />
-            <button class="btn" id="btnUnlock">Desbloquear</button>
-            <div class="err" id="lockMsg"></div>
-            <div class="hint">Obs: trava visual (site estático).</div>
-          </div>
-
-          <div id="advancedBox" style="display:none;margin-top:14px;">
-            <div class="grid">
-              <div>
-                <h3 style="margin:0 0 8px;font-size:15px;">Máquina Física (valor que recebe)</h3>
-                <div id="maquinaExtra"></div>
-              </div>
-              <div>
-                <h3 style="margin:0 0 8px;font-size:15px;">Link de Pagamento (valor que recebe)</h3>
-                <div id="linkExtra"></div>
-              </div>
+            <div id="lockBox">
+              <label for="pin">Senha</label>
+              <input id="pin" type="password" placeholder="Digite a senha" />
+              <button class="btn" id="btnUnlock">Desbloquear</button>
+              <div class="err" id="lockMsg"></div>
+              <div class="hint">Obs: trava visual (site estático).</div>
             </div>
 
-            <button class="btn btn-dark" id="btnLock">Bloquear</button>
-          </div>
-        </div>
-      </details>
-    </div>
-
-    <!-- Accordion 2 (novo) -->
-    <div class="card" style="margin-top:20px;">
-      <details class="accordion" id="discountAccordion">
-        <summary>
-          Descontar taxas (Máquina + Link) em cima de um valor <span class="chev">▾</span>
-        </summary>
-
-        <div class="acc-body">
-          <p style="margin:0 0 12px;color:#555">
-            Digite um valor abaixo. A tabela calcula quanto você recebe ao <strong>descontar</strong> as taxas
-            usando as mesmas porcentagens da taxa extra.<br>
-            <strong>Valor que recebe</strong> = <em>Valor digitado</em> − <em>(Valor digitado × taxa%)</em>
-          </p>
-
-          <div id="lockBox2">
-            <label for="pin2">Senha</label>
-            <input id="pin2" type="password" placeholder="Digite a senha" />
-            <button class="btn" id="btnUnlock2">Desbloquear</button>
-            <div class="err" id="lockMsg2"></div>
-            <div class="hint">Obs: trava visual (site estático).</div>
-          </div>
-
-          <div id="discountBox2" style="display:none;margin-top:14px;">
-            <label for="valor2">Valor (R$)</label>
-            <input type="text" id="valor2" placeholder="Ex: 1000 ou 1000,50" />
-            <div class="hint">Esse valor é independente do valor à vista de cima.</div>
-
-            <div class="grid" style="margin-top:12px;">
-              <div>
-                <h3 style="margin:0 0 8px;font-size:15px;">Máquina (valor que recebe após desconto)</h3>
-                <div id="maquinaDesconto"></div>
+            <div id="advancedBox" style="display:none;margin-top:14px;">
+              <div class="grid">
+                <div>
+                  <h3 style="margin:0 0 8px;font-size:15px;">Máquina Física (valor que recebe)</h3>
+                  <div id="maquinaExtra"></div>
+                </div>
+                <div>
+                  <h3 style="margin:0 0 8px;font-size:15px;">Link de Pagamento (valor que recebe)</h3>
+                  <div id="linkExtra"></div>
+                </div>
               </div>
-              <div>
-                <h3 style="margin:0 0 8px;font-size:15px;">Link (valor que recebe após desconto)</h3>
-                <div id="linkDesconto"></div>
-              </div>
+
+              <button class="btn btn-dark" id="btnLock">Bloquear</button>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <!-- Accordion 2 -->
+      <div class="card" style="margin-top:20px;">
+        <details class="accordion" id="discountAccordion">
+          <summary>
+            Descontar taxas (Máquina + Link) em cima de um valor <span class="chev">▾</span>
+          </summary>
+
+          <div class="acc-body">
+            <p style="margin:0 0 12px;color:#555">
+              Digite um valor abaixo. A tabela calcula quanto você recebe ao <strong>descontar</strong> as taxas
+              usando as mesmas porcentagens da taxa extra.<br>
+              <strong>Valor que recebe</strong> = <em>Valor digitado</em> − <em>(Valor digitado × taxa%)</em>
+            </p>
+
+            <div id="lockBox2">
+              <label for="pin2">Senha</label>
+              <input id="pin2" type="password" placeholder="Digite a senha" />
+              <button class="btn" id="btnUnlock2">Desbloquear</button>
+              <div class="err" id="lockMsg2"></div>
+              <div class="hint">Obs: trava visual (site estático).</div>
             </div>
 
-            <button class="btn btn-dark" id="btnLock2">Bloquear</button>
+            <div id="discountBox2" style="display:none;margin-top:14px;">
+              <label for="valor2">Valor (R$)</label>
+              <input type="text" id="valor2" placeholder="Ex: 1000 ou 1000,50" />
+              <div class="hint">Esse valor é independente do valor à vista de cima.</div>
+
+              <div class="grid" style="margin-top:12px;">
+                <div>
+                  <h3 style="margin:0 0 8px;font-size:15px;">Máquina (valor que recebe após desconto)</h3>
+                  <div id="maquinaDesconto"></div>
+                </div>
+                <div>
+                  <h3 style="margin:0 0 8px;font-size:15px;">Link (valor que recebe após desconto)</h3>
+                  <div id="linkDesconto"></div>
+                </div>
+              </div>
+
+              <button class="btn btn-dark" id="btnLock2">Bloquear</button>
+            </div>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- =========================
+         TAB 2: TROCA
+    ========================== -->
+    <section id="viewTrade" class="hidden">
+
+      <div class="card">
+        <h1>Troca de Aparelhos</h1>
+        <p>
+          Use esta guia para calcular o valor que o cliente precisa pagar quando entra um aparelho na troca.
+          (Você pode usar como “orçamento rápido”).
+        </p>
+
+        <div class="grid">
+          <div>
+            <label for="trade_modelo">Modelo do aparelho na troca</label>
+            <input id="trade_modelo" type="text" placeholder="Ex: iPhone 13 128GB" />
+          </div>
+          <div>
+            <label for="trade_condicao">Condição</label>
+            <input id="trade_condicao" type="text" placeholder="Ex: Bom / marcas / bateria 85%" />
           </div>
         </div>
-      </details>
-    </div>
 
+        <div class="grid" style="margin-top:10px;">
+          <div>
+            <label for="trade_valorNovo">Valor do aparelho novo (R$)</label>
+            <input id="trade_valorNovo" type="text" placeholder="Ex: 4999,90" />
+          </div>
+          <div>
+            <label for="trade_creditoTroca">Crédito da troca (quanto você paga no usado) (R$)</label>
+            <input id="trade_creditoTroca" type="text" placeholder="Ex: 2500" />
+          </div>
+        </div>
+
+        <div class="grid" style="margin-top:10px;">
+          <div>
+            <label for="trade_custos">Custos extras (peças / frete / serviço) (R$)</label>
+            <input id="trade_custos" type="text" placeholder="Ex: 150" />
+            <div class="hint">Se não tiver, deixa 0.</div>
+          </div>
+          <div>
+            <label for="trade_entrada">Entrada do cliente (R$)</label>
+            <input id="trade_entrada" type="text" placeholder="Ex: 300" />
+            <div class="hint">Se não tiver, deixa 0.</div>
+          </div>
+        </div>
+
+        <div class="kpi">
+          <div class="hint">Diferença a pagar</div>
+          <strong id="trade_total">R$ 0,00</strong>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+          <button class="btnSmall" id="trade_copy">Copiar resumo</button>
+          <button class="btnSmall" id="trade_clear">Limpar</button>
+        </div>
+
+        <div class="mono" id="trade_resumo">Preencha os campos acima para gerar o resumo.</div>
+      </div>
+
+    </section>
   </div>
 
 <script>
-  // TAXAS PRINCIPAIS (tabela de cima)
+  // =========================
+  // TAXAS PRINCIPAIS
+  // =========================
   const MAQUINA = {
     debito: 1.30,
     credito: {
@@ -164,7 +283,7 @@
     }
   };
 
-  // TAXAS EXTRAS (percentuais)
+  // TAXAS EXTRAS
   const EXTRA_MAQUINA = {
     0: 0.99,
     1: 3.39, 2: 4.40, 3: 5.40, 4: 5.70, 5: 5.80, 6: 5.99,
@@ -177,14 +296,14 @@
     7: 8.00, 8: 8.60, 9: 9.10, 10: 9.40, 11: 10.20, 12: 10.75
   };
 
-  // SENHA (ambas iguais)
+  // SENHA
   const PIN_VALUE = "358000";
-
-  // Persistência separada
   const ADV_KEY_1 = "adv_unlocked_v2";
   const ADV_KEY_2 = "disc_unlocked_v2";
 
-  // Helpers
+  // =========================
+  // HELPERS
+  // =========================
   function formatar(v){
     return v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
   }
@@ -194,7 +313,7 @@
     if (!t) return null;
     const normalizado = t.replace(/\./g, "").replace(",", ".");
     const v = Number(normalizado);
-    return Number.isFinite(v) && v > 0 ? v : null;
+    return Number.isFinite(v) ? v : null;
   }
 
   function lerValor() { return parseBRL(document.getElementById("valor").value); }
@@ -261,13 +380,49 @@
     return (typeof v === "number" && isFinite(v)) ? v : 0;
   }
 
-  // Tabelas principais (de cima)
+  async function copyText(text){
+    try{ await navigator.clipboard.writeText(text); }
+    catch(e){
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+  }
+
+  // =========================
+  // TABS
+  // =========================
+  function showTab(which){
+    const calcBtn = document.getElementById("tabCalc");
+    const tradeBtn = document.getElementById("tabTrade");
+    const calcView = document.getElementById("viewCalc");
+    const tradeView = document.getElementById("viewTrade");
+
+    if (which === "calc"){
+      calcBtn.classList.add("active");
+      tradeBtn.classList.remove("active");
+      calcView.classList.remove("hidden");
+      tradeView.classList.add("hidden");
+    } else {
+      tradeBtn.classList.add("active");
+      calcBtn.classList.remove("active");
+      tradeView.classList.remove("hidden");
+      calcView.classList.add("hidden");
+    }
+  }
+
+  // =========================
+  // CALCULADORA
+  // =========================
   function atualizar(){
     const alvoMaquina = document.getElementById("maquina");
     const alvoLink = document.getElementById("link");
     const valor = lerValor();
 
-    if (!valor){
+    if (!valor || valor <= 0){
       alvoMaquina.innerHTML = "Digite um valor acima.";
       alvoLink.innerHTML = "Digite um valor acima.";
       renderAvancado(null);
@@ -298,7 +453,6 @@
     renderAvancado(valor);
   }
 
-  // Accordion 1
   function renderAvancado(valorAvista){
     const boxM = document.getElementById("maquinaExtra");
     const boxL = document.getElementById("linkExtra");
@@ -335,7 +489,6 @@
     boxL.innerHTML = montarTabela2(linhasL);
   }
 
-  // Accordion 2 (novo) - Máquina + Link sobre valor2
   function renderDesconto2(){
     if (!isUnlocked2()) return;
 
@@ -343,13 +496,12 @@
     const boxM = document.getElementById("maquinaDesconto");
     const boxL = document.getElementById("linkDesconto");
 
-    if (!valor){
+    if (!valor || valor <= 0){
       boxM.innerHTML = "<p>Digite um valor acima.</p>";
       boxL.innerHTML = "<p>Digite um valor acima.</p>";
       return;
     }
 
-    // Máquina: Débito + 1..18
     let linhasM = "";
     {
       const te = taxaExtra(EXTRA_MAQUINA, 0);
@@ -363,7 +515,6 @@
     });
     boxM.innerHTML = montarTabela2(linhasM);
 
-    // Link: 1..12
     let linhasL = "";
     Object.keys(LINK.credito).map(Number).sort((a,b)=>a-b).forEach(p=>{
       const te = taxaExtra(EXTRA_LINK, p);
@@ -404,8 +555,54 @@
     }
   }
 
-  // Init
+  // =========================
+  // TROCA - CÁLCULO
+  // =========================
+  function tradeValue(id){ return parseBRL(document.getElementById(id).value) || 0; }
+
+  function atualizarTroca(){
+    const modelo = (document.getElementById("trade_modelo").value || "").trim();
+    const cond = (document.getElementById("trade_condicao").value || "").trim();
+
+    const valorNovo = tradeValue("trade_valorNovo");
+    const creditoTroca = tradeValue("trade_creditoTroca");
+    const custos = tradeValue("trade_custos");
+    const entrada = tradeValue("trade_entrada");
+
+    // Diferença: novo + custos - crédito - entrada
+    const total = (valorNovo + custos) - (creditoTroca + entrada);
+
+    document.getElementById("trade_total").textContent = formatar(total);
+
+    const resumo =
+`TROCA DE APARELHO
+• Aparelho na troca: ${modelo || "-"}
+• Condição: ${cond || "-"}
+• Valor aparelho novo: ${formatar(valorNovo)}
+• Crédito da troca (usado): ${formatar(creditoTroca)}
+• Custos extras: ${formatar(custos)}
+• Entrada: ${formatar(entrada)}
+--------------------------------
+➡ Diferença a pagar: ${formatar(total)}`;
+
+    document.getElementById("trade_resumo").textContent = resumo;
+  }
+
+  function limparTroca(){
+    ["trade_modelo","trade_condicao","trade_valorNovo","trade_creditoTroca","trade_custos","trade_entrada"]
+      .forEach(id => document.getElementById(id).value = "");
+    atualizarTroca();
+  }
+
+  // =========================
+  // INIT
+  // =========================
   document.addEventListener("DOMContentLoaded", () => {
+    // Tabs
+    document.getElementById("tabCalc").addEventListener("click", ()=>showTab("calc"));
+    document.getElementById("tabTrade").addEventListener("click", ()=>showTab("trade"));
+
+    // Calculadora
     document.getElementById("valor").addEventListener("input", atualizar);
 
     document.getElementById("btnUnlock").addEventListener("click", () => {
@@ -416,14 +613,9 @@
         setUnlocked1(true);
         updateLockUI1();
         document.getElementById("advAccordion").open = true;
-      } else {
-        msg.textContent = "Senha incorreta.";
-      }
+      } else msg.textContent = "Senha incorreta.";
     });
-    document.getElementById("btnLock").addEventListener("click", () => {
-      setUnlocked1(false);
-      updateLockUI1();
-    });
+    document.getElementById("btnLock").addEventListener("click", () => { setUnlocked1(false); updateLockUI1(); });
 
     document.getElementById("btnUnlock2").addEventListener("click", () => {
       const pin = (document.getElementById("pin2").value || "").trim();
@@ -433,20 +625,27 @@
         setUnlocked2(true);
         updateLockUI2();
         document.getElementById("discountAccordion").open = true;
-      } else {
-        msg.textContent = "Senha incorreta.";
-      }
+      } else msg.textContent = "Senha incorreta.";
     });
-    document.getElementById("btnLock2").addEventListener("click", () => {
-      setUnlocked2(false);
-      updateLockUI2();
-    });
+    document.getElementById("btnLock2").addEventListener("click", () => { setUnlocked2(false); updateLockUI2(); });
 
     document.getElementById("valor2").addEventListener("input", renderDesconto2);
 
+    // Troca
+    ["trade_modelo","trade_condicao","trade_valorNovo","trade_creditoTroca","trade_custos","trade_entrada"]
+      .forEach(id => document.getElementById(id).addEventListener("input", atualizarTroca));
+
+    document.getElementById("trade_copy").addEventListener("click", async ()=>{
+      await copyText(document.getElementById("trade_resumo").textContent || "");
+    });
+    document.getElementById("trade_clear").addEventListener("click", limparTroca);
+
+    // Inicial
+    showTab("calc");
     updateLockUI1();
     updateLockUI2();
     atualizar();
+    atualizarTroca();
   });
 </script>
 
