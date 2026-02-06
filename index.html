@@ -11,9 +11,9 @@
 
     .card{background:white;padding:20px;border-radius:15px;box-shadow:0 8px 20px rgba(0,0,0,0.08);margin-bottom:20px}
     h1{margin:0 0 10px 0}
-    p{margin:0 0 16px 0;color:#555}
+    p{margin:0 0 16px 0;color:#555;line-height:1.35}
     label{display:block;margin:10px 0 6px 0;font-size:13px;color:#222}
-    input{width:100%;padding:12px;border-radius:10px;border:1px solid #ddd;font-size:16px;outline:none}
+    input, select{width:100%;padding:12px;border-radius:10px;border:1px solid #ddd;font-size:16px;outline:none;background:#fff}
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
     table{width:100%;border-collapse:collapse;margin-top:10px}
     th,td{padding:10px;border-bottom:1px solid #eee;text-align:left;font-size:14px}
@@ -22,30 +22,18 @@
     @media(max-width:900px){.grid{grid-template-columns:1fr}}
 
     /* Top tabs */
-    .tabsWrap{
-      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
-      margin-bottom:16px;
-    }
+    .tabsWrap{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
     .tabBtn{
-      border:1px solid #e5e7eb;
-      background:#fff;
-      padding:10px 14px;
-      border-radius:999px;
-      cursor:pointer;
-      font-weight:700;
-      color:#111827;
+      border:1px solid #e5e7eb;background:#fff;padding:10px 14px;border-radius:999px;
+      cursor:pointer;font-weight:700;color:#111827
     }
-    .tabBtn.active{
-      background:#2563eb;
-      border-color:#2563eb;
-      color:#fff;
-    }
+    .tabBtn.active{background:#2563eb;border-color:#2563eb;color:#fff}
 
     /* Accordion */
     details.accordion{border:1px solid #e5e7eb;border-radius:14px;overflow:hidden}
     details.accordion > summary{
-      list-style:none; cursor:pointer; padding:14px 16px; background:#f9fafb;
-      display:flex; align-items:center; justify-content:space-between; font-weight:700
+      list-style:none;cursor:pointer;padding:14px 16px;background:#f9fafb;
+      display:flex;align-items:center;justify-content:space-between;font-weight:700
     }
     details.accordion > summary::-webkit-details-marker{display:none}
     .chev{transition:transform .2s ease}
@@ -54,8 +42,15 @@
     .btn{width:100%;margin-top:10px;padding:12px;border:0;border-radius:12px;background:#2563eb;color:#fff;font-weight:700;font-size:14px;cursor:pointer}
     .btn-dark{background:#111827}
     .err{margin-top:10px;color:#b91c1c;font-size:13px}
-
     .hidden{display:none !important;}
+
+    /* Trade */
+    .kpi{padding:14px;border:1px solid #e5e7eb;border-radius:14px;background:#fafafa;margin-top:12px}
+    .kpi strong{font-size:20px}
+    .breakdown{margin-top:10px;color:#333;font-size:14px;line-height:1.4}
+    .checkRow{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
+    .checkRow input[type="checkbox"]{width:auto;transform:scale(1.1)}
+    .pill{display:inline-block;padding:5px 10px;border:1px solid #e5e7eb;border-radius:999px;background:#fff;font-size:12px;color:#111827}
   </style>
 </head>
 
@@ -68,7 +63,9 @@
       <button class="tabBtn" id="tabTrade">Troca de Aparelhos</button>
     </div>
 
-    <!-- TAB 1: CALCULADORA -->
+    <!-- =========================
+         TAB 1: CALCULADORA
+    ========================== -->
     <section id="viewCalc">
       <div class="card">
         <h1>Calculadora de Taxas</h1>
@@ -176,17 +173,54 @@
       </div>
     </section>
 
-    <!-- TAB 2: TROCA (vazia por enquanto) -->
+    <!-- =========================
+         TAB 2: TROCA (AUTOMÁTICO)
+    ========================== -->
     <section id="viewTrade" class="hidden">
       <div class="card">
         <h1>Troca de Aparelhos</h1>
-        <p>Guia em construção. Vamos automatizar tudo aqui em etapas.</p>
+        <p>
+          Selecione o modelo e o armazenamento. O valor é calculado automaticamente.
+          <br><span class="pill">Base 64GB</span>
+          <span class="pill">+R$ 50 se GB &gt; 64 (quando aplicável)</span>
+          <span class="pill">Bateria em manutenção: −R$ 150 (somente iPhone 13+)</span>
+        </p>
+
+        <div class="grid">
+          <div>
+            <label for="trade_model">Modelo</label>
+            <select id="trade_model"></select>
+          </div>
+          <div>
+            <label for="trade_storage">Armazenamento</label>
+            <select id="trade_storage"></select>
+            <div class="hint" id="trade_storage_hint"></div>
+          </div>
+        </div>
+
+        <div class="checkRow">
+          <input type="checkbox" id="trade_battery" />
+          <label for="trade_battery" style="margin:0">Bateria em manutenção (−R$ 150 a partir do iPhone 13)</label>
+        </div>
+
+        <div class="kpi">
+          <div class="hint">Valor para pagar no aparelho (troca)</div>
+          <strong id="trade_price">R$ 0,00</strong>
+          <div class="breakdown" id="trade_breakdown"></div>
+        </div>
+
+        <div class="hint" style="margin-top:10px;">
+          Lembrete: “sempre mandar a avaliação” e aplicar descontos por avarias (vamos adicionar isso na próxima etapa).
+        </div>
       </div>
     </section>
+
   </div>
 
 <script>
-  // TAXAS PRINCIPAIS
+  // =========================
+  // TAXAS PRINCIPAIS (calculadora)
+  // =========================
   const MAQUINA = {
     debito: 1.30,
     credito: {
@@ -203,7 +237,9 @@
     }
   };
 
-  // TAXAS EXTRAS
+  // =========================
+  // TAXAS EXTRAS (accordions da calculadora)
+  // =========================
   const EXTRA_MAQUINA = {
     0: 0.99,
     1: 3.39, 2: 4.40, 3: 5.40, 4: 5.70, 5: 5.80, 6: 5.99,
@@ -216,14 +252,56 @@
     7: 8.00, 8: 8.60, 9: 9.10, 10: 9.40, 11: 10.20, 12: 10.75
   };
 
+  // =========================
+  // SENHA (accordions)
+  // =========================
   const PIN_VALUE = "358000";
   const ADV_KEY_1 = "adv_unlocked_v2";
   const ADV_KEY_2 = "disc_unlocked_v2";
 
+  // =========================
+  // TROCA - BASE DE MODELOS
+  // =========================
+  // Regra:
+  // - Modelos "base64": valor base é 64GB, e se GB > 64 => +50
+  // - Modelos "fixedByGB": usa valor exato por GB (sem +50 por fora)
+  //
+  // Valores enviados por você:
+  const TRADE_MODELS = [
+    { id:"XR_XS", name:"iPhone XR / XS", type:"base64", base:200, minGen:10 },
+    { id:"XS_MAX", name:"iPhone XS Max", type:"base64", base:300, minGen:10 },
+    { id:"11", name:"iPhone 11", type:"base64", base:450, minGen:11 },
+    { id:"11_PRO", name:"iPhone 11 Pro", type:"base64", base:650, minGen:11 },
+    { id:"11_PRO_MAX", name:"iPhone 11 Pro Max", type:"base64", base:750, minGen:11 },
+    { id:"12", name:"iPhone 12", type:"base64", base:700, minGen:12 },
+    { id:"12_PRO", name:"iPhone 12 Pro", type:"base64", base:900, minGen:12 },
+    { id:"12_PRO_MAX", name:"iPhone 12 Pro Max", type:"base64", base:1200, minGen:12 },
+    { id:"13", name:"iPhone 13", type:"base64", base:1400, minGen:13 },
+    { id:"13_PRO", name:"iPhone 13 Pro", type:"base64", base:1700, minGen:13 },
+    { id:"13_PRO_MAX", name:"iPhone 13 Pro Max", type:"base64", base:1900, minGen:13 },
+    { id:"14", name:"iPhone 14", type:"base64", base:1700, minGen:14 },
+    { id:"14_PRO", name:"iPhone 14 Pro", type:"base64", base:2400, minGen:14 },
+    { id:"14_PRO_MAX", name:"iPhone 14 Pro Max", type:"base64", base:2850, minGen:14 },
+    { id:"15", name:"iPhone 15", type:"base64", base:2350, minGen:15 },
+
+    { id:"15_PRO", name:"iPhone 15 Pro", type:"fixedByGB", prices:{128:2750,256:2950}, minGen:15 },
+    { id:"15_PRO_MAX", name:"iPhone 15 Pro Max", type:"fixedByGB", prices:{256:3900,512:4100}, minGen:15 },
+
+    { id:"16", name:"iPhone 16", type:"fixedByGB", prices:{128:3400,256:3500}, minGen:16 },
+    { id:"16_PRO", name:"iPhone 16 Pro", type:"fixedByGB", prices:{128:4100,256:4250}, minGen:16 },
+    { id:"16_PRO_MAX", name:"iPhone 16 Pro Max", type:"fixedByGB", prices:{256:5000,512:5200}, minGen:16 }
+  ];
+
+  const STORAGE_DEFAULT = [64,128,256,512];
+
+  // =========================
+  // HELPERS
+  // =========================
   function formatar(v){
     return v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
   }
 
+  // Aceita: 1000 / 1000,50 / 1.000,50
   function parseBRL(raw) {
     const t = (raw || "").trim();
     if (!t) return null;
@@ -296,7 +374,9 @@
     return (typeof v === "number" && isFinite(v)) ? v : 0;
   }
 
-  // Tabs
+  // =========================
+  // TABS
+  // =========================
   function showTab(which){
     const calcBtn = document.getElementById("tabCalc");
     const tradeBtn = document.getElementById("tabTrade");
@@ -316,7 +396,9 @@
     }
   }
 
-  // Calculadora principal
+  // =========================
+  // CALCULADORA (tab 1)
+  // =========================
   function atualizar(){
     const alvoMaquina = document.getElementById("maquina");
     const alvoLink = document.getElementById("link");
@@ -457,10 +539,104 @@
     }
   }
 
+  // =========================
+  // TROCA (tab 2) - AUTO
+  // =========================
+  function populateTradeModels(){
+    const sel = document.getElementById("trade_model");
+    sel.innerHTML = "";
+    for (const m of TRADE_MODELS){
+      const opt = document.createElement("option");
+      opt.value = m.id;
+      opt.textContent = m.name;
+      sel.appendChild(opt);
+    }
+  }
+
+  function getModelById(id){
+    return TRADE_MODELS.find(m => m.id === id) || TRADE_MODELS[0];
+  }
+
+  function populateStorageForModel(model){
+    const storageSel = document.getElementById("trade_storage");
+    const hint = document.getElementById("trade_storage_hint");
+    storageSel.innerHTML = "";
+
+    let storages = [];
+
+    if (model.type === "fixedByGB"){
+      storages = Object.keys(model.prices).map(Number).sort((a,b)=>a-b);
+      hint.textContent = "Valor fixo por GB para este modelo (não aplica +R$ 50).";
+    } else {
+      storages = STORAGE_DEFAULT.slice();
+      hint.textContent = "Base 64GB. Se for maior que 64GB, soma +R$ 50 no valor pago.";
+    }
+
+    for (const s of storages){
+      const opt = document.createElement("option");
+      opt.value = String(s);
+      opt.textContent = `${s}GB`;
+      storageSel.appendChild(opt);
+    }
+  }
+
+  function calcTradePrice(){
+    const modelId = document.getElementById("trade_model").value;
+    const storage = Number(document.getElementById("trade_storage").value);
+    const batteryMaint = document.getElementById("trade_battery").checked;
+
+    const model = getModelById(modelId);
+
+    let base = 0;
+    let addStorage = 0;
+    let batteryDiscount = 0;
+    let note = "";
+
+    if (model.type === "fixedByGB"){
+      base = model.prices[storage] || 0;
+      note = "Preço fixo por GB";
+    } else {
+      base = model.base;
+      if (storage && storage > 64){
+        addStorage = 50; // regra: acima de 64, soma 50 (uma vez)
+      }
+      note = "Base 64GB (+50 se >64GB)";
+    }
+
+    // bateria manutenção: -150 apenas 13+
+    if (batteryMaint && model.minGen >= 13){
+      batteryDiscount = 150;
+    }
+
+    const finalPrice = Math.max(0, base + addStorage - batteryDiscount);
+
+    document.getElementById("trade_price").textContent = formatar(finalPrice);
+
+    const breakdownLines = [];
+    breakdownLines.push(`Modelo: ${model.name}`);
+    breakdownLines.push(`Armazenamento: ${storage}GB`);
+    breakdownLines.push(`Regra: ${note}`);
+    breakdownLines.push(`Base: ${formatar(base)}`);
+    if (addStorage > 0) breakdownLines.push(`+ Extra GB: ${formatar(addStorage)}`);
+    if (batteryMaint){
+      if (model.minGen >= 13) breakdownLines.push(`− Bateria em manutenção: ${formatar(batteryDiscount)}`);
+      else breakdownLines.push(`Bateria em manutenção: (não aplica desconto para este modelo)`);
+    }
+    breakdownLines.push(`————————————`);
+    breakdownLines.push(`Valor final para pagar: ${formatar(finalPrice)}`);
+
+    document.getElementById("trade_breakdown").innerHTML = breakdownLines.join("<br>");
+  }
+
+  // =========================
+  // INIT
+  // =========================
   document.addEventListener("DOMContentLoaded", () => {
+    // Tabs
     document.getElementById("tabCalc").addEventListener("click", ()=>showTab("calc"));
     document.getElementById("tabTrade").addEventListener("click", ()=>showTab("trade"));
 
+    // Calculadora
     document.getElementById("valor").addEventListener("input", atualizar);
 
     document.getElementById("btnUnlock").addEventListener("click", () => {
@@ -489,6 +665,25 @@
 
     document.getElementById("valor2").addEventListener("input", renderDesconto2);
 
+    // Troca
+    populateTradeModels();
+    const modelSel = document.getElementById("trade_model");
+    const storageSel = document.getElementById("trade_storage");
+    const batterySel = document.getElementById("trade_battery");
+
+    // set initial storages and calc
+    populateStorageForModel(getModelById(modelSel.value));
+    calcTradePrice();
+
+    modelSel.addEventListener("change", () => {
+      const m = getModelById(modelSel.value);
+      populateStorageForModel(m);
+      calcTradePrice();
+    });
+    storageSel.addEventListener("change", calcTradePrice);
+    batterySel.addEventListener("change", calcTradePrice);
+
+    // Inicial
     showTab("calc");
     updateLockUI1();
     updateLockUI2();
