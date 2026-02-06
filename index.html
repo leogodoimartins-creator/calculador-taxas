@@ -55,29 +55,7 @@
     .btn-dark{background:#111827}
     .err{margin-top:10px;color:#b91c1c;font-size:13px}
 
-    /* Small buttons */
-    .btnSmall{
-      padding:10px 12px;
-      border-radius:12px;
-      border:1px solid #e5e7eb;
-      background:#fff;
-      cursor:pointer;
-      font-weight:700;
-    }
-
-    /* Hide/Show sections */
     .hidden{display:none !important;}
-
-    /* Result boxes */
-    .kpi{
-      padding:14px;
-      border:1px solid #e5e7eb;
-      border-radius:14px;
-      background:#fafafa;
-      margin-top:12px;
-    }
-    .kpi strong{font-size:18px;}
-    .mono{white-space:pre-wrap; font-size:13px; background:#fff; border:1px solid #e5e7eb; padding:12px; border-radius:12px; margin-top:10px;}
   </style>
 </head>
 
@@ -90,9 +68,7 @@
       <button class="tabBtn" id="tabTrade">Troca de Aparelhos</button>
     </div>
 
-    <!-- =========================
-         TAB 1: CALCULADORA
-    ========================== -->
+    <!-- TAB 1: CALCULADORA -->
     <section id="viewCalc">
       <div class="card">
         <h1>Calculadora de Taxas</h1>
@@ -200,73 +176,17 @@
       </div>
     </section>
 
-    <!-- =========================
-         TAB 2: TROCA
-    ========================== -->
+    <!-- TAB 2: TROCA (vazia por enquanto) -->
     <section id="viewTrade" class="hidden">
-
       <div class="card">
         <h1>Troca de Aparelhos</h1>
-        <p>
-          Use esta guia para calcular o valor que o cliente precisa pagar quando entra um aparelho na troca.
-          (Você pode usar como “orçamento rápido”).
-        </p>
-
-        <div class="grid">
-          <div>
-            <label for="trade_modelo">Modelo do aparelho na troca</label>
-            <input id="trade_modelo" type="text" placeholder="Ex: iPhone 13 128GB" />
-          </div>
-          <div>
-            <label for="trade_condicao">Condição</label>
-            <input id="trade_condicao" type="text" placeholder="Ex: Bom / marcas / bateria 85%" />
-          </div>
-        </div>
-
-        <div class="grid" style="margin-top:10px;">
-          <div>
-            <label for="trade_valorNovo">Valor do aparelho novo (R$)</label>
-            <input id="trade_valorNovo" type="text" placeholder="Ex: 4999,90" />
-          </div>
-          <div>
-            <label for="trade_creditoTroca">Crédito da troca (quanto você paga no usado) (R$)</label>
-            <input id="trade_creditoTroca" type="text" placeholder="Ex: 2500" />
-          </div>
-        </div>
-
-        <div class="grid" style="margin-top:10px;">
-          <div>
-            <label for="trade_custos">Custos extras (peças / frete / serviço) (R$)</label>
-            <input id="trade_custos" type="text" placeholder="Ex: 150" />
-            <div class="hint">Se não tiver, deixa 0.</div>
-          </div>
-          <div>
-            <label for="trade_entrada">Entrada do cliente (R$)</label>
-            <input id="trade_entrada" type="text" placeholder="Ex: 300" />
-            <div class="hint">Se não tiver, deixa 0.</div>
-          </div>
-        </div>
-
-        <div class="kpi">
-          <div class="hint">Diferença a pagar</div>
-          <strong id="trade_total">R$ 0,00</strong>
-        </div>
-
-        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
-          <button class="btnSmall" id="trade_copy">Copiar resumo</button>
-          <button class="btnSmall" id="trade_clear">Limpar</button>
-        </div>
-
-        <div class="mono" id="trade_resumo">Preencha os campos acima para gerar o resumo.</div>
+        <p>Guia em construção. Vamos automatizar tudo aqui em etapas.</p>
       </div>
-
     </section>
   </div>
 
 <script>
-  // =========================
   // TAXAS PRINCIPAIS
-  // =========================
   const MAQUINA = {
     debito: 1.30,
     credito: {
@@ -296,14 +216,10 @@
     7: 8.00, 8: 8.60, 9: 9.10, 10: 9.40, 11: 10.20, 12: 10.75
   };
 
-  // SENHA
   const PIN_VALUE = "358000";
   const ADV_KEY_1 = "adv_unlocked_v2";
   const ADV_KEY_2 = "disc_unlocked_v2";
 
-  // =========================
-  // HELPERS
-  // =========================
   function formatar(v){
     return v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
   }
@@ -380,21 +296,7 @@
     return (typeof v === "number" && isFinite(v)) ? v : 0;
   }
 
-  async function copyText(text){
-    try{ await navigator.clipboard.writeText(text); }
-    catch(e){
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand("copy");
-      document.body.removeChild(ta);
-    }
-  }
-
-  // =========================
-  // TABS
-  // =========================
+  // Tabs
   function showTab(which){
     const calcBtn = document.getElementById("tabCalc");
     const tradeBtn = document.getElementById("tabTrade");
@@ -414,9 +316,7 @@
     }
   }
 
-  // =========================
-  // CALCULADORA
-  // =========================
+  // Calculadora principal
   function atualizar(){
     const alvoMaquina = document.getElementById("maquina");
     const alvoLink = document.getElementById("link");
@@ -453,6 +353,7 @@
     renderAvancado(valor);
   }
 
+  // Accordion 1
   function renderAvancado(valorAvista){
     const boxM = document.getElementById("maquinaExtra");
     const boxL = document.getElementById("linkExtra");
@@ -489,6 +390,7 @@
     boxL.innerHTML = montarTabela2(linhasL);
   }
 
+  // Accordion 2
   function renderDesconto2(){
     if (!isUnlocked2()) return;
 
@@ -555,54 +457,10 @@
     }
   }
 
-  // =========================
-  // TROCA - CÁLCULO
-  // =========================
-  function tradeValue(id){ return parseBRL(document.getElementById(id).value) || 0; }
-
-  function atualizarTroca(){
-    const modelo = (document.getElementById("trade_modelo").value || "").trim();
-    const cond = (document.getElementById("trade_condicao").value || "").trim();
-
-    const valorNovo = tradeValue("trade_valorNovo");
-    const creditoTroca = tradeValue("trade_creditoTroca");
-    const custos = tradeValue("trade_custos");
-    const entrada = tradeValue("trade_entrada");
-
-    // Diferença: novo + custos - crédito - entrada
-    const total = (valorNovo + custos) - (creditoTroca + entrada);
-
-    document.getElementById("trade_total").textContent = formatar(total);
-
-    const resumo =
-`TROCA DE APARELHO
-• Aparelho na troca: ${modelo || "-"}
-• Condição: ${cond || "-"}
-• Valor aparelho novo: ${formatar(valorNovo)}
-• Crédito da troca (usado): ${formatar(creditoTroca)}
-• Custos extras: ${formatar(custos)}
-• Entrada: ${formatar(entrada)}
---------------------------------
-➡ Diferença a pagar: ${formatar(total)}`;
-
-    document.getElementById("trade_resumo").textContent = resumo;
-  }
-
-  function limparTroca(){
-    ["trade_modelo","trade_condicao","trade_valorNovo","trade_creditoTroca","trade_custos","trade_entrada"]
-      .forEach(id => document.getElementById(id).value = "");
-    atualizarTroca();
-  }
-
-  // =========================
-  // INIT
-  // =========================
   document.addEventListener("DOMContentLoaded", () => {
-    // Tabs
     document.getElementById("tabCalc").addEventListener("click", ()=>showTab("calc"));
     document.getElementById("tabTrade").addEventListener("click", ()=>showTab("trade"));
 
-    // Calculadora
     document.getElementById("valor").addEventListener("input", atualizar);
 
     document.getElementById("btnUnlock").addEventListener("click", () => {
@@ -631,21 +489,10 @@
 
     document.getElementById("valor2").addEventListener("input", renderDesconto2);
 
-    // Troca
-    ["trade_modelo","trade_condicao","trade_valorNovo","trade_creditoTroca","trade_custos","trade_entrada"]
-      .forEach(id => document.getElementById(id).addEventListener("input", atualizarTroca));
-
-    document.getElementById("trade_copy").addEventListener("click", async ()=>{
-      await copyText(document.getElementById("trade_resumo").textContent || "");
-    });
-    document.getElementById("trade_clear").addEventListener("click", limparTroca);
-
-    // Inicial
     showTab("calc");
     updateLockUI1();
     updateLockUI2();
     atualizar();
-    atualizarTroca();
   });
 </script>
 
