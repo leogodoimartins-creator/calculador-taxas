@@ -303,8 +303,8 @@
   function lerValor2(){ return parseBRL(document.getElementById("valor2").value); }
 
   function valorFinalEmbutido(valorAvista, taxaPercent){
-    const t = taxaPercent / 100;
-    return valorAvista / (1 - t);
+  const t = taxaPercent / 100;
+  return valorAvista * (1 + t);
   }
 
   function montarTabela4(linhasHtml){
