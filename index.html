@@ -48,6 +48,19 @@
     .checkRow{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
     .checkRow input[type="checkbox"]{width:auto;transform:scale(1.1)}
     .pill{display:inline-block;padding:5px 10px;border:1px solid #e5e7eb;border-radius:999px;background:#fff;font-size:12px;color:#111827}
+
+    /* Troca - descontos */
+    .discBox{margin-top:14px;border:1px solid #e5e7eb;border-radius:14px;padding:14px;background:#fff}
+    .discTitle{font-weight:800;margin:0 0 10px 0}
+    .discList{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    @media(max-width:900px){.discList{grid-template-columns:1fr}}
+    .discItem{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #f0f0f0;border-radius:12px;padding:10px;background:#fafafa}
+    .discLeft{display:flex;align-items:center;gap:10px}
+    .discItem input[type="checkbox"]{width:auto;transform:scale(1.1)}
+    .money{font-weight:800}
+    .mini{font-size:12px;color:#6b7280;margin-top:2px}
+    .lensRow{display:flex;gap:10px;align-items:center;justify-content:space-between;border:1px solid #f0f0f0;border-radius:12px;padding:10px;background:#fafafa}
+    .lensRow select{max-width:140px}
   </style>
 </head>
 
@@ -59,7 +72,9 @@
       <button class="tabBtn" id="tabTrade">Troca de Aparelhos</button>
     </div>
 
-    <!-- TAB 1: CALCULADORA -->
+    <!-- =========================
+         TAB 1: CALCULADORA
+    ========================== -->
     <section id="viewCalc">
       <div class="card">
         <h1>Calculadora de Taxas</h1>
@@ -82,7 +97,6 @@
         </div>
       </div>
 
-      <!-- Accordion 1 -->
       <div class="card" style="margin-top:20px;">
         <details class="accordion" id="advAccordion">
           <summary>
@@ -122,7 +136,6 @@
         </details>
       </div>
 
-      <!-- Accordion 2 -->
       <div class="card" style="margin-top:20px;">
         <details class="accordion" id="discountAccordion">
           <summary>
@@ -167,16 +180,17 @@
       </div>
     </section>
 
-    <!-- TAB 2: TROCA -->
+    <!-- =========================
+         TAB 2: TROCA
+    ========================== -->
     <section id="viewTrade" class="hidden">
       <div class="card">
         <h1>Troca de Aparelhos</h1>
         <p>
-          Selecione o modelo e o armazenamento. O valor é calculado automaticamente.
-          <br><span class="pill">Base = menor GB do modelo</span>
+          <span class="pill">Base = menor GB do modelo</span>
           <span class="pill">Cada degrau de GB soma +R$ 50</span>
           <span class="pill">Bateria em manutenção: −R$ 150 (somente iPhone 13+)</span>
-          <span class="pill">Exceção: 15 Pro+ (preços já descritos)</span>
+          <span class="pill">Exceção: 15 Pro+ (preço fixo)</span>
         </p>
 
         <div class="grid">
@@ -197,19 +211,54 @@
         </div>
 
         <div class="kpi">
-          <div class="hint">Valor para pagar no aparelho (troca)</div>
+          <div class="hint">Valor para pagar no aparelho (troca) — antes das avarias</div>
           <strong id="trade_price">R$ 0,00</strong>
           <div class="breakdown" id="trade_breakdown"></div>
         </div>
+
+        <div class="discBox">
+          <p class="discTitle">Área de desconto (histórico do modelo)</p>
+          <div class="hint">Marque as avarias abaixo. O total é descontado do valor da troca.</div>
+
+          <div id="discList" class="discList"></div>
+
+          <div class="lensRow" style="margin-top:10px;">
+            <div>
+              <div style="font-weight:800">Lente de câmera quebrada</div>
+              <div class="mini" id="lensHint">Até 3 lentes • desconto por lente</div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;">
+              <select id="lensCount">
+                <option value="0">0 lente</option>
+                <option value="1">1 lente</option>
+                <option value="2">2 lentes</option>
+                <option value="3">3 lentes</option>
+              </select>
+              <div class="money" id="lensTotal">-R$ 0,00</div>
+            </div>
+          </div>
+
+          <div class="kpi" style="margin-top:12px;">
+            <div class="hint">Total de descontos (avarias + lentes)</div>
+            <strong id="disc_total">R$ 0,00</strong>
+            <div class="breakdown" id="disc_breakdown"></div>
+          </div>
+
+          <div class="kpi" style="margin-top:12px;">
+            <div class="hint">Valor final a pagar na troca</div>
+            <strong id="trade_final">R$ 0,00</strong>
+          </div>
+        </div>
+
       </div>
     </section>
 
   </div>
 
 <script>
-  // =========================
-  // CALCULADORA (não alterei)
-  // =========================
+  /* =========================
+     CALCULADORA (mantida)
+  ========================= */
   const MAQUINA = {
     debito: 1.30,
     credito: {
@@ -242,46 +291,7 @@
   const ADV_KEY_1 = "adv_unlocked_v2";
   const ADV_KEY_2 = "disc_unlocked_v2";
 
-  // =========================
-  // TROCA - MODELOS
-  // Base = menor GB do modelo
-  // Cada degrau acima soma +50 (index do storage)
-  // Exceção: fixedByGB (15 Pro+)
-  // =========================
-  const TRADE_MODELS = [
-    { id:"XR", name:"iPhone XR", type:"tiered", base:200, minGen:10, storages:[64,128,256] },
-    { id:"XS", name:"iPhone XS", type:"tiered", base:200, minGen:10, storages:[64,256,512] },
-    { id:"XS_MAX", name:"iPhone XS Max", type:"tiered", base:300, minGen:10, storages:[64,256,512] },
-
-    { id:"11", name:"iPhone 11", type:"tiered", base:450, minGen:11, storages:[64,128,256] },
-    { id:"11_PRO", name:"iPhone 11 Pro", type:"tiered", base:650, minGen:11, storages:[64,256,512] },
-    { id:"11_PRO_MAX", name:"iPhone 11 Pro Max", type:"tiered", base:750, minGen:11, storages:[64,256,512] },
-
-    { id:"12", name:"iPhone 12", type:"tiered", base:700, minGen:12, storages:[64,128,256] },
-    { id:"12_PRO", name:"iPhone 12 Pro", type:"tiered", base:900, minGen:12, storages:[128,256,512] },
-    { id:"12_PRO_MAX", name:"iPhone 12 Pro Max", type:"tiered", base:1200, minGen:12, storages:[128,256,512] },
-
-    { id:"13", name:"iPhone 13", type:"tiered", base:1400, minGen:13, storages:[128,256,512] },
-    { id:"13_PRO", name:"iPhone 13 Pro", type:"tiered", base:1700, minGen:13, storages:[128,256,512,1024] },
-    { id:"13_PRO_MAX", name:"iPhone 13 Pro Max", type:"tiered", base:1900, minGen:13, storages:[128,256,512,1024] },
-
-    { id:"14", name:"iPhone 14", type:"tiered", base:1700, minGen:14, storages:[128,256,512] },
-    { id:"14_PRO", name:"iPhone 14 Pro", type:"tiered", base:2400, minGen:14, storages:[128,256,512,1024] },
-    { id:"14_PRO_MAX", name:"iPhone 14 Pro Max", type:"tiered", base:2850, minGen:14, storages:[128,256,512,1024] },
-
-    { id:"15", name:"iPhone 15", type:"tiered", base:2350, minGen:15, storages:[128,256,512] },
-
-    // Exceções (preços já descritos por você)
-    { id:"15_PRO", name:"iPhone 15 Pro", type:"fixedByGB", minGen:15, prices:{128:2750,256:2950} },
-    { id:"15_PRO_MAX", name:"iPhone 15 Pro Max", type:"fixedByGB", minGen:15, prices:{256:3900,512:4100} },
-
-    { id:"16", name:"iPhone 16", type:"fixedByGB", minGen:16, prices:{128:3400,256:3500} },
-    { id:"16_PRO", name:"iPhone 16 Pro", type:"fixedByGB", minGen:16, prices:{128:4100,256:4250} },
-    { id:"16_PRO_MAX", name:"iPhone 16 Pro Max", type:"fixedByGB", minGen:16, prices:{256:5000,512:5200} }
-  ];
-
   function formatar(v){ return v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"}); }
-
   function parseBRL(raw) {
     const t = (raw || "").trim();
     if (!t) return null;
@@ -289,7 +299,6 @@
     const v = Number(normalizado);
     return Number.isFinite(v) ? v : null;
   }
-
   function lerValor(){ return parseBRL(document.getElementById("valor").value); }
   function lerValor2(){ return parseBRL(document.getElementById("valor2").value); }
 
@@ -356,7 +365,6 @@
     }
   }
 
-  // ---- Calculadora (tab 1)
   function atualizar(){
     const alvoMaquina = document.getElementById("maquina");
     const alvoLink = document.getElementById("link");
@@ -494,7 +502,203 @@
     }
   }
 
-  // ---- Troca (tab 2)
+  /* =========================
+     TROCA (com histórico por modelo)
+  ========================= */
+
+  // 1) Tabelas de “histórico” (valores por modelo)
+  function getScreen(modelId){
+    const m = modelId;
+    if (m==="XR") return 300;
+    if (m==="XS" || m==="XS_MAX") return (m==="XS_MAX" ? 500 : 400);
+    if (m==="11") return 350;
+    if (m==="11_PRO") return 500;
+    if (m==="11_PRO_MAX") return 600;
+    if (m==="12" || m==="12_PRO") return 400;
+    if (m==="12_PRO_MAX") return 900;
+    if (m==="13") return 480;
+    if (m==="13_PRO") return 1300;
+    if (m==="13_PRO_MAX") return 1500;
+    if (m==="14") return 700;
+    if (m==="14_PRO") return 1400;
+    if (m==="14_PRO_MAX") return 1900;
+    if (m==="15") return 900;
+    if (m==="15_PRO") return 1600;
+    if (m==="15_PRO_MAX") return 2100;
+    if (m==="16") return 1300;
+    if (m==="16_PRO") return 1900;
+    if (m==="16_PRO_MAX") return 2600;
+    return 0;
+  }
+
+  function getRearCam(modelId){
+    const m = modelId;
+    if (m==="XR" || m==="XS") return 170;
+    if (m==="XS_MAX") return 170;
+    if (m==="11") return 180;
+    if (m==="11_PRO" || m==="11_PRO_MAX") return 300;
+    if (m==="12") return 300;
+    if (m==="12_PRO") return 380;
+    if (m==="12_PRO_MAX") return 400;
+    if (m==="13") return 280;
+    if (m==="13_PRO" || m==="13_PRO_MAX") return 400;
+    if (m==="14") return 330;
+    if (m==="14_PRO") return 380;
+    if (m==="14_PRO_MAX") return 400;
+    if (m==="15") return 380;
+    if (m==="15_PRO") return 450;
+    if (m==="15_PRO_MAX") return 480;
+    if (m==="16") return 500;
+    if (m==="16_PRO") return 550;
+    if (m==="16_PRO_MAX") return 600;
+    return 0;
+  }
+
+  function getFrontCam(modelId){
+    const m = modelId;
+    if (m==="XR" || m==="XS" || m==="XS_MAX") return 250;
+    if (m==="11" || m==="11_PRO" || m==="11_PRO_MAX") return 280;
+    if (m==="12" || m==="12_PRO" || m==="12_PRO_MAX") return 300;
+    if (m==="13") return 330;
+    if (m==="13_PRO" || m==="13_PRO_MAX") return 380;
+    if (m==="14" || m==="14_PRO" || m==="14_PRO_MAX") return 350;
+    if (m==="15" || m==="15_PRO" || m==="15_PRO_MAX") return 400;
+    if (m==="16" || m==="16_PRO" || m==="16_PRO_MAX") return 400; // (você não enviou a linha 16 frontal; mantive padrão 15)
+    return 0;
+  }
+
+  function getMic(modelId){
+    const m = modelId;
+    if (m==="XR" || m==="XS") return 180;
+    if (m==="XS_MAX") return 200;
+    if (m==="11") return 180;
+    if (m==="11_PRO" || m==="11_PRO_MAX") return 300;
+    if (m==="12" || m==="12_PRO") return 280;
+    if (m==="12_PRO_MAX") return 300;
+    if (m==="13") return 280;
+    if (m==="13_PRO") return 330;
+    if (m==="13_PRO_MAX") return 350;
+    if (m==="14") return 330;
+    if (m==="14_PRO" || m==="14_PRO_MAX") return 350;
+    if (m==="15" || m==="15_PRO" || m==="15_PRO_MAX") return 450;
+    if (m==="16" || m==="16_PRO" || m==="16_PRO_MAX") return 450; // (você não enviou linha 16 mic; mantive padrão 15)
+    return 0;
+  }
+
+  function getSpeaker(modelId){
+    const m = modelId;
+    if (m==="XR" || m==="XS") return 120;
+    if (m==="XS_MAX") return 120;
+    if (m==="11") return 120;
+    if (m==="11_PRO") return 140;
+    if (m==="11_PRO_MAX") return 150;
+    if (m==="12" || m==="12_PRO") return 130;
+    if (m==="12_PRO_MAX") return 150;
+    if (m==="13") return 130;
+    if (m==="13_PRO" || m==="13_PRO_MAX") return 180;
+    if (m==="14" || m==="14_PRO" || m==="14_PRO_MAX") return 180;
+    if (m==="15" || m==="15_PRO" || m==="15_PRO_MAX") return 250;
+    if (m==="16" || m==="16_PRO" || m==="16_PRO_MAX") return 250; // (você não enviou linha 16 speaker; mantive padrão 15)
+    return 0;
+  }
+
+  function getButton(modelId){
+    const m = modelId;
+    if (m==="XR" || m==="XS" || m==="XS_MAX") return 180;
+    if (m==="11") return 180;
+    if (m==="11_PRO" || m==="11_PRO_MAX") return 200;
+    if (m==="12" || m==="12_PRO") return 180;
+    if (m==="12_PRO_MAX") return 230;
+    if (m==="13") return 200;
+    if (m==="13_PRO" || m==="13_PRO_MAX") return 250;
+    if (m==="14" || m==="14_PRO" || m==="14_PRO_MAX") return 250;
+    if (m==="15" || m==="15_PRO" || m==="15_PRO_MAX") return 330;
+    if (m==="16" || m==="16_PRO" || m==="16_PRO_MAX") return 330; // (você não enviou linha 16 botão; mantive padrão 15)
+    return 0;
+  }
+
+  function getBackGlass(modelId){
+    const m = modelId;
+    if (m==="XR" || m==="XS" || m==="XS_MAX") return 180;
+    if (m==="11" || m==="11_PRO" || m==="11_PRO_MAX") return 200;
+    if (m==="12" || m==="12_PRO" || m==="12_PRO_MAX") return 230;
+    if (m==="13" || m==="13_PRO" || m==="13_PRO_MAX") return 250;
+    if (m==="14" || m==="14_PRO" || m==="14_PRO_MAX") return 280;
+    if (m==="15" || m==="15_PRO" || m==="15_PRO_MAX") return 330;
+    if (m==="16" || m==="16_PRO" || m==="16_PRO_MAX") return 380;
+    return 0;
+  }
+
+  function getFaceID(modelId){
+    const m = modelId;
+    if (m==="XR" || m==="XS" || m==="XS_MAX") return 250;
+    if (m==="11" || m==="11_PRO" || m==="11_PRO_MAX") return 250;
+    if (m==="12" || m==="12_PRO" || m==="12_PRO_MAX") return 300;
+    if (m==="13" || m==="13_PRO" || m==="13_PRO_MAX") return 450;
+    if (m==="14" || m==="14_PRO" || m==="14_PRO_MAX") return 450;
+    if (m==="15" || m==="15_PRO" || m==="15_PRO_MAX") return 550;
+    if (m==="16" || m==="16_PRO" || m==="16_PRO_MAX") return 550; // (você não enviou FaceID linha 16; mantive padrão 15)
+    return 0;
+  }
+
+  function getBoard(modelId){
+    const m = modelId;
+    if (m==="XR" || m==="XS" || m==="XS_MAX") return 350;
+    if (m==="11" || m==="11_PRO" || m==="11_PRO_MAX") return 400;
+    if (m==="12" || m==="12_PRO" || m==="12_PRO_MAX") return 500;
+    if (m==="13" || m==="13_PRO" || m==="13_PRO_MAX") return 600;
+    if (m==="14" || m==="14_PRO" || m==="14_PRO_MAX") return 700;
+    if (m==="15" || m==="15_PRO" || m==="15_PRO_MAX") return 1000;
+    if (m==="16" || m==="16_PRO" || m==="16_PRO_MAX") return 1200;
+    return 0;
+  }
+
+  function getLensPer(modelId){
+    const m = modelId;
+    if (m==="XR") return 70;
+    if (m==="11" || m==="11_PRO" || m==="11_PRO_MAX") return 80;
+    if (m==="12" || m==="12_PRO" || m==="12_PRO_MAX") return 90;
+    if (m==="13" || m==="13_PRO" || m==="13_PRO_MAX") return 100;
+    if (m==="14" || m==="14_PRO" || m==="14_PRO_MAX") return 110;
+    if (m==="15" || m==="15_PRO" || m==="15_PRO_MAX") return 120;
+    if (m==="16") return 130;
+    if (m==="16_PRO" || m==="16_PRO_MAX") return 150;
+    return 0;
+  }
+
+  // 2) Lista dos modelos da troca (com GB e regra +50 por degrau)
+  const TRADE_MODELS = [
+    { id:"XR", name:"iPhone XR", type:"tiered", base:200, minGen:10, storages:[64,128,256] },
+    { id:"XS", name:"iPhone XS", type:"tiered", base:200, minGen:10, storages:[64,256,512] },
+    { id:"XS_MAX", name:"iPhone XS Max", type:"tiered", base:300, minGen:10, storages:[64,256,512] },
+
+    { id:"11", name:"iPhone 11", type:"tiered", base:450, minGen:11, storages:[64,128,256] },
+    { id:"11_PRO", name:"iPhone 11 Pro", type:"tiered", base:650, minGen:11, storages:[64,256,512] },
+    { id:"11_PRO_MAX", name:"iPhone 11 Pro Max", type:"tiered", base:750, minGen:11, storages:[64,256,512] },
+
+    { id:"12", name:"iPhone 12", type:"tiered", base:700, minGen:12, storages:[64,128,256] },
+    { id:"12_PRO", name:"iPhone 12 Pro", type:"tiered", base:900, minGen:12, storages:[128,256,512] },
+    { id:"12_PRO_MAX", name:"iPhone 12 Pro Max", type:"tiered", base:1200, minGen:12, storages:[128,256,512] },
+
+    { id:"13", name:"iPhone 13", type:"tiered", base:1400, minGen:13, storages:[128,256,512] },
+    { id:"13_PRO", name:"iPhone 13 Pro", type:"tiered", base:1700, minGen:13, storages:[128,256,512,1024] },
+    { id:"13_PRO_MAX", name:"iPhone 13 Pro Max", type:"tiered", base:1900, minGen:13, storages:[128,256,512,1024] },
+
+    { id:"14", name:"iPhone 14", type:"tiered", base:1700, minGen:14, storages:[128,256,512] },
+    { id:"14_PRO", name:"iPhone 14 Pro", type:"tiered", base:2400, minGen:14, storages:[128,256,512,1024] },
+    { id:"14_PRO_MAX", name:"iPhone 14 Pro Max", type:"tiered", base:2850, minGen:14, storages:[128,256,512,1024] },
+
+    { id:"15", name:"iPhone 15", type:"tiered", base:2350, minGen:15, storages:[128,256,512] },
+
+    // Exceções (preço fixo por GB já descrito por você)
+    { id:"15_PRO", name:"iPhone 15 Pro", type:"fixedByGB", minGen:15, prices:{128:2750,256:2950} },
+    { id:"15_PRO_MAX", name:"iPhone 15 Pro Max", type:"fixedByGB", minGen:15, prices:{256:3900,512:4100} },
+
+    { id:"16", name:"iPhone 16", type:"fixedByGB", minGen:16, prices:{128:3400,256:3500} },
+    { id:"16_PRO", name:"iPhone 16 Pro", type:"fixedByGB", minGen:16, prices:{128:4100,256:4250} },
+    { id:"16_PRO_MAX", name:"iPhone 16 Pro Max", type:"fixedByGB", minGen:16, prices:{256:5000,512:5200} }
+  ];
+
   function populateTradeModels(){
     const sel = document.getElementById("trade_model");
     sel.innerHTML = "";
@@ -532,58 +736,144 @@
     }
   }
 
-  // ✅ AQUI É A MUDANÇA PRINCIPAL: +50 progressivo por degrau
-  function calcTradePrice(){
+  function buildDiscountsForModel(modelId){
+    // “histórico” individual por modelo (valores calculados pela sua tabela)
+    return [
+      { id:"tela", label:"Tela (original)", value: getScreen(modelId) },
+      { id:"camera_traseira", label:"Câmera traseira", value: getRearCam(modelId) },
+      { id:"camera_frontal", label:"Câmera frontal", value: getFrontCam(modelId) },
+      { id:"conector_mic", label:"Conector / Microfone (original)", value: getMic(modelId) },
+      { id:"alto_falante", label:"Alto-falante", value: getSpeaker(modelId) },
+      { id:"botao", label:"Botão", value: getButton(modelId) },
+      { id:"vidro_traseiro", label:"Vidro traseiro", value: getBackGlass(modelId) },
+      { id:"faceid", label:"Face ID", value: getFaceID(modelId) },
+      { id:"placa", label:"Problema de placa", value: getBoard(modelId) }
+    ];
+  }
+
+  function renderDiscountList(modelId){
+    const box = document.getElementById("discList");
+    box.innerHTML = "";
+
+    const discounts = buildDiscountsForModel(modelId);
+
+    for (const d of discounts){
+      const row = document.createElement("div");
+      row.className = "discItem";
+      row.innerHTML = `
+        <div class="discLeft">
+          <input type="checkbox" data-disc="${d.id}">
+          <div>
+            <div style="font-weight:800">${d.label}</div>
+            <div class="mini">Desconto: ${formatar(d.value)}</div>
+          </div>
+        </div>
+        <div class="money">-${formatar(d.value)}</div>
+      `;
+      box.appendChild(row);
+    }
+
+    // bind
+    box.querySelectorAll('input[type="checkbox"][data-disc]').forEach(chk=>{
+      chk.addEventListener("change", () => calcAll());
+    });
+
+    // lentes por modelo
+    const per = getLensPer(modelId);
+    document.getElementById("lensHint").textContent = `Até 3 lentes • desconto por lente: ${formatar(per)}`;
+    document.getElementById("lensCount").value = "0";
+    document.getElementById("lensTotal").textContent = `-${formatar(0)}`;
+  }
+
+  function calcBaseTrade(model, storage){
+    if (model.type === "fixedByGB"){
+      return { base: model.prices[storage] || 0, addStorage: 0, note: "Preço fixo por GB" };
+    }
+    const storages = (model.storages || []).slice().sort((a,b)=>a-b);
+    const idx = storages.indexOf(storage);
+    const steps = (idx >= 0) ? idx : 0;
+    const addStorage = 50 * steps; // +50 progressivo por degrau
+    return {
+      base: model.base,
+      addStorage,
+      note: `Base = menor GB (${storages[0]}GB) | +R$50 por degrau`
+    };
+  }
+
+  function calcDiscounts(modelId){
+    const discounts = buildDiscountsForModel(modelId);
+
+    const selected = new Set();
+    document.querySelectorAll('#discList input[type="checkbox"][data-disc]').forEach(chk=>{
+      if (chk.checked) selected.add(chk.getAttribute("data-disc"));
+    });
+
+    let total = 0;
+    const lines = [];
+
+    for (const d of discounts){
+      if (selected.has(d.id)){
+        total += Number(d.value) || 0;
+        lines.push(`${d.label}: -${formatar(d.value)}`);
+      }
+    }
+
+    // lentes (0 a 3)
+    const per = getLensPer(modelId);
+    const count = Number(document.getElementById("lensCount").value || 0);
+    const lensTotal = per * count;
+    document.getElementById("lensTotal").textContent = `-${formatar(lensTotal)}`;
+
+    if (lensTotal > 0){
+      total += lensTotal;
+      lines.push(`Lentes quebradas (${count}x): -${formatar(lensTotal)} (${formatar(per)}/lente)`);
+    }
+
+    return { total, lines };
+  }
+
+  function calcAll(){
     const modelId = document.getElementById("trade_model").value;
     const storage = Number(document.getElementById("trade_storage").value);
     const batteryMaint = document.getElementById("trade_battery").checked;
-
     const model = getModelById(modelId);
 
-    let base = 0;
-    let addStorage = 0;
+    const baseObj = calcBaseTrade(model, storage);
+
     let batteryDiscount = 0;
-    let note = "";
+    if (batteryMaint && model.minGen >= 13) batteryDiscount = 150;
 
-    if (model.type === "fixedByGB"){
-      base = model.prices[storage] || 0;
-      note = "Preço fixo por GB (já definido)";
-    } else {
-      base = model.base;
+    const disc = calcDiscounts(modelId);
 
-      const storages = (model.storages || []).slice().sort((a,b)=>a-b);
-      const idx = storages.indexOf(storage); // 0 = menor GB (base)
-      const steps = (idx >= 0) ? idx : 0;
+    const valueTrade = Math.max(0, baseObj.base + baseObj.addStorage - batteryDiscount);
+    const finalPay = Math.max(0, valueTrade - disc.total);
 
-      addStorage = 50 * steps; // <-- progressivo
-      note = `Base = ${storages[0] ? ((storages[0]===1024) ? "1TB" : storages[0]+"GB") : "mínimo"} | +R$50 por degrau`;
-    }
-
-    if (batteryMaint && model.minGen >= 13){
-      batteryDiscount = 150;
-    }
-
-    const finalPrice = Math.max(0, base + addStorage - batteryDiscount);
-
-    document.getElementById("trade_price").textContent = formatar(finalPrice);
+    document.getElementById("trade_price").textContent = formatar(valueTrade);
 
     const storageLabel = (storage === 1024) ? "1TB" : `${storage}GB`;
     const breakdownLines = [];
     breakdownLines.push(`Modelo: ${model.name}`);
     breakdownLines.push(`Armazenamento: ${storageLabel}`);
-    breakdownLines.push(`Regra: ${note}`);
-    breakdownLines.push(`Base (menor GB): ${formatar(base)}`);
-    if (addStorage > 0) breakdownLines.push(`+ Degraus de GB: ${formatar(addStorage)}`);
+    breakdownLines.push(`Regra: ${baseObj.note}`);
+    breakdownLines.push(`Base: ${formatar(baseObj.base)}`);
+    if (baseObj.addStorage > 0) breakdownLines.push(`+ Degraus de GB: ${formatar(baseObj.addStorage)}`);
     if (batteryMaint){
       if (model.minGen >= 13) breakdownLines.push(`− Bateria em manutenção: ${formatar(batteryDiscount)}`);
       else breakdownLines.push(`Bateria em manutenção: (não aplica desconto para este modelo)`);
     }
     breakdownLines.push(`————————————`);
-    breakdownLines.push(`Valor final para pagar: ${formatar(finalPrice)}`);
-
+    breakdownLines.push(`Valor antes das avarias: ${formatar(valueTrade)}`);
     document.getElementById("trade_breakdown").innerHTML = breakdownLines.join("<br>");
+
+    document.getElementById("disc_total").textContent = formatar(disc.total);
+    document.getElementById("disc_breakdown").innerHTML = disc.lines.length ? disc.lines.join("<br>") : "<span class='hint'>Nenhuma avaria marcada.</span>";
+
+    document.getElementById("trade_final").textContent = formatar(finalPay);
   }
 
+  /* =========================
+     INIT
+  ========================= */
   document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("tabCalc").addEventListener("click", ()=>showTab("calc"));
     document.getElementById("tabTrade").addEventListener("click", ()=>showTab("trade"));
@@ -616,26 +906,35 @@
 
     document.getElementById("valor2").addEventListener("input", renderDesconto2);
 
+    // Locks state
+    showTab("calc");
+    updateLockUI1();
+    updateLockUI2();
+    atualizar();
+
     // Troca init
     populateTradeModels();
     const modelSel = document.getElementById("trade_model");
     const storageSel = document.getElementById("trade_storage");
     const batterySel = document.getElementById("trade_battery");
+    const lensSel = document.getElementById("lensCount");
 
-    populateStorageForModel(getModelById(modelSel.value));
-    calcTradePrice();
+    function refreshModel(){
+      const model = getModelById(modelSel.value);
+      populateStorageForModel(model);
+      renderDiscountList(modelSel.value);
+      // limpar checks
+      document.querySelectorAll('#discList input[type="checkbox"][data-disc]').forEach(chk => chk.checked = false);
+      lensSel.value = "0";
+      calcAll();
+    }
 
-    modelSel.addEventListener("change", () => {
-      populateStorageForModel(getModelById(modelSel.value));
-      calcTradePrice();
-    });
-    storageSel.addEventListener("change", calcTradePrice);
-    batterySel.addEventListener("change", calcTradePrice);
+    modelSel.addEventListener("change", refreshModel);
+    storageSel.addEventListener("change", calcAll);
+    batterySel.addEventListener("change", calcAll);
+    lensSel.addEventListener("change", calcAll);
 
-    showTab("calc");
-    updateLockUI1();
-    updateLockUI2();
-    atualizar();
+    refreshModel();
   });
 </script>
 
