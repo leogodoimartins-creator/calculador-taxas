@@ -188,7 +188,7 @@
           <span class="pill">Base = menor GB do modelo</span>
           <span class="pill">Cada degrau de GB soma +R$ 50</span>
           <span class="pill">Bateria em manutenção: −R$ 150 (somente iPhone 13+)</span>
-          <span class="pill">Exceção: 15 Pro+ e 16+ (preço fixo por GB)</span>
+          <span class="pill">Exceção: 15 Pro+ (preço fixo por GB)</span>
         </p>
 
         <div class="grid">
@@ -304,7 +304,7 @@
   function lerValor(){ return parseBRL(document.getElementById("valor").value); }
   function lerValor2(){ return parseBRL(document.getElementById("valor2").value); }
 
-  // ✅ CORRIGIDO: SOMAR TAXA (ex: 8800 + 13,9% = 10023,20)
+  // ✅ SOMAR TAXA (ex: 8800 + 13,9% = 10023,20)
   function valorFinalComTaxa(valorAvista, taxaPercent){
     const t = taxaPercent / 100;
     return valorAvista * (1 + t);
@@ -415,8 +415,6 @@
       return;
     }
 
-    // ⚠️ Aqui “valor que recebe” segue sua regra do accordion:
-    // Valor Final (tabela de cima) − (Valor Final × taxa extra)
     let linhasM = "";
     {
       const vf = valorFinalComTaxa(valorAvista, MAQUINA.debito);
@@ -511,29 +509,13 @@
      TROCA (bases atualizadas + novos modelos)
   ========================= */
 
-  // IDs de modelo
-  // XR, XS, XS_MAX, 11, 11_PRO, 11_PRO_MAX, 12, 12_PRO, 12_PRO_MAX,
-  // 13, 13_PRO, 13_PRO_MAX, 14, 14_PLUS, 14_PRO, 14_PRO_MAX,
-  // 15, 15_PLUS, 15_PRO, 15_PRO_MAX,
-  // 16, 16E, 16_PLUS, 16_PRO, 16_PRO_MAX
-
-  // === TABELAS DE PEÇAS (com regras que você definiu)
   function getScreen(modelId){
     const m = modelId;
-
-    // 16e (novo)
     if (m==="16E") return 700;
-
-    // 15 Plus (tela específica)
     if (m==="15_PLUS") return 1000;
-
-    // 14 Plus = igual 14
     if (m==="14_PLUS") return 700;
-
-    // 16 Plus = igual 16 (assumido)
     if (m==="16_PLUS") return 1300;
 
-    // padrão antigo
     if (m==="XR") return 300;
     if (m==="XS") return 400;
     if (m==="XS_MAX") return 500;
@@ -559,17 +541,9 @@
 
   function getRearCam(modelId){
     const m = modelId;
-
-    // 14 Plus = igual 14
     if (m==="14_PLUS") return 330;
-
-    // 15 Plus = igual 15
     if (m==="15_PLUS") return 380;
-
-    // 16 Plus = igual 16 (assumido)
     if (m==="16_PLUS") return 500;
-
-    // 16e: não informado -> 0
     if (m==="16E") return 0;
 
     if (m==="XR" || m==="XS") return 170;
@@ -595,11 +569,10 @@
 
   function getFrontCam(modelId){
     const m = modelId;
-
     if (m==="14_PLUS") return 350;
-    if (m==="15_PLUS") return 400; // toda linha 15
-    if (m==="16_PLUS") return 400; // mantendo padrão 15 (não informado)
-    if (m==="16E") return 0;        // não informado
+    if (m==="15_PLUS") return 400;
+    if (m==="16_PLUS") return 400;
+    if (m==="16E") return 0;
 
     if (m==="XR" || m==="XS" || m==="XS_MAX") return 250;
     if (m==="11" || m==="11_PRO" || m==="11_PRO_MAX") return 280;
@@ -608,17 +581,16 @@
     if (m==="13_PRO" || m==="13_PRO_MAX") return 380;
     if (m==="14" || m==="14_PRO" || m==="14_PRO_MAX") return 350;
     if (m==="15" || m==="15_PRO" || m==="15_PRO_MAX") return 400;
-    if (m==="16" || m==="16_PRO" || m==="16_PRO_MAX") return 400; // padrão 15
+    if (m==="16" || m==="16_PRO" || m==="16_PRO_MAX") return 400;
     return 0;
   }
 
   function getMic(modelId){
     const m = modelId;
-
     if (m==="14_PLUS") return 330;
     if (m==="15_PLUS") return 450;
-    if (m==="16_PLUS") return 450; // padrão 15
-    if (m==="16E") return 0;       // não informado
+    if (m==="16_PLUS") return 450;
+    if (m==="16E") return 0;
 
     if (m==="XR" || m==="XS") return 180;
     if (m==="XS_MAX") return 200;
@@ -632,17 +604,16 @@
     if (m==="14") return 330;
     if (m==="14_PRO" || m==="14_PRO_MAX") return 350;
     if (m==="15" || m==="15_PRO" || m==="15_PRO_MAX") return 450;
-    if (m==="16" || m==="16_PRO" || m==="16_PRO_MAX") return 450; // padrão 15
+    if (m==="16" || m==="16_PRO" || m==="16_PRO_MAX") return 450;
     return 0;
   }
 
   function getSpeaker(modelId){
     const m = modelId;
-
     if (m==="14_PLUS") return 180;
     if (m==="15_PLUS") return 250;
-    if (m==="16_PLUS") return 250; // padrão 15
-    if (m==="16E") return 0;       // não informado
+    if (m==="16_PLUS") return 250;
+    if (m==="16E") return 0;
 
     if (m==="XR" || m==="XS") return 120;
     if (m==="XS_MAX") return 120;
@@ -655,17 +626,16 @@
     if (m==="13_PRO" || m==="13_PRO_MAX") return 180;
     if (m==="14" || m==="14_PRO" || m==="14_PRO_MAX") return 180;
     if (m==="15" || m==="15_PRO" || m==="15_PRO_MAX") return 250;
-    if (m==="16" || m==="16_PRO" || m==="16_PRO_MAX") return 250; // padrão 15
+    if (m==="16" || m==="16_PRO" || m==="16_PRO_MAX") return 250;
     return 0;
   }
 
   function getButton(modelId){
     const m = modelId;
-
     if (m==="14_PLUS") return 250;
     if (m==="15_PLUS") return 330;
-    if (m==="16_PLUS") return 330; // padrão 15
-    if (m==="16E") return 0;       // não informado
+    if (m==="16_PLUS") return 330;
+    if (m==="16E") return 0;
 
     if (m==="XR" || m==="XS" || m==="XS_MAX") return 180;
     if (m==="11") return 180;
@@ -676,17 +646,16 @@
     if (m==="13_PRO" || m==="13_PRO_MAX") return 250;
     if (m==="14" || m==="14_PRO" || m==="14_PRO_MAX") return 250;
     if (m==="15" || m==="15_PRO" || m==="15_PRO_MAX") return 330;
-    if (m==="16" || m==="16_PRO" || m==="16_PRO_MAX") return 330; // padrão 15
+    if (m==="16" || m==="16_PRO" || m==="16_PRO_MAX") return 330;
     return 0;
   }
 
   function getBackGlass(modelId){
     const m = modelId;
-
-    if (m==="16E") return 280; // informado
-    if (m==="14_PLUS") return 280; // igual 14
+    if (m==="16E") return 280;
+    if (m==="14_PLUS") return 280;
     if (m==="15_PLUS") return 330;
-    if (m==="16_PLUS") return 380; // igual 16
+    if (m==="16_PLUS") return 380;
 
     if (m==="XR" || m==="XS" || m==="XS_MAX") return 180;
     if (m==="11" || m==="11_PRO" || m==="11_PRO_MAX") return 200;
@@ -700,11 +669,10 @@
 
   function getFaceID(modelId){
     const m = modelId;
-
-    if (m==="16E") return 450;   // informado
+    if (m==="16E") return 450;
     if (m==="14_PLUS") return 450;
     if (m==="15_PLUS") return 550;
-    if (m==="16_PLUS") return 550; // padrão 15 (não informado para 16)
+    if (m==="16_PLUS") return 550;
 
     if (m==="XR" || m==="XS" || m==="XS_MAX") return 250;
     if (m==="11" || m==="11_PRO" || m==="11_PRO_MAX") return 250;
@@ -712,17 +680,16 @@
     if (m==="13" || m==="13_PRO" || m==="13_PRO_MAX") return 450;
     if (m==="14" || m==="14_PRO" || m==="14_PRO_MAX") return 450;
     if (m==="15" || m==="15_PRO" || m==="15_PRO_MAX") return 550;
-    if (m==="16" || m==="16_PRO" || m==="16_PRO_MAX") return 550; // padrão 15
+    if (m==="16" || m==="16_PRO" || m==="16_PRO_MAX") return 550;
     return 0;
   }
 
   function getBoard(modelId){
     const m = modelId;
-
     if (m==="14_PLUS") return 700;
     if (m==="15_PLUS") return 1000;
     if (m==="16_PLUS") return 1200;
-    if (m==="16E") return 0; // não informado
+    if (m==="16E") return 0;
 
     if (m==="XR" || m==="XS" || m==="XS_MAX") return 350;
     if (m==="11" || m==="11_PRO" || m==="11_PRO_MAX") return 400;
@@ -736,11 +703,10 @@
 
   function getLensPer(modelId){
     const m = modelId;
-
     if (m==="14_PLUS") return 110;
     if (m==="15_PLUS") return 120;
-    if (m==="16_PLUS") return 130; // igual 16 Plus/16 (sua regra: 16/16 Plus = 130; 16 Pro/Max = 150)
-    if (m==="16E") return 0;        // não informado
+    if (m==="16_PLUS") return 130;
+    if (m==="16E") return 0;
 
     if (m==="XR") return 70;
     if (m==="11" || m==="11_PRO" || m==="11_PRO_MAX") return 80;
@@ -767,21 +733,18 @@
     ];
   }
 
-  function getMissingParts(modelId){
-    const list = buildDiscountsForModel(modelId);
-    const missing = [];
-    for (const it of list){
-      if (!it.value || it.value === 0){
-        // não marca vidro/tela se for 0 em modelos antigos? (aqui é proposital p/ 16e)
-        missing.push(it.label);
-      }
+  function showMissingWarn(modelId){
+    const warnBox = document.getElementById("missingPartsWarn");
+    if (modelId === "16E"){
+      warnBox.classList.remove("hidden");
+      warnBox.innerHTML = `<strong>Atenção (16e):</strong> você só informou <b>Tela</b>, <b>Vidro traseiro</b> e <b>Face ID</b>. O restante está como <b>R$0</b> no desconto.`;
+    } else {
+      warnBox.classList.add("hidden");
+      warnBox.textContent = "";
     }
-    const lens = getLensPer(modelId);
-    if (!lens || lens === 0) missing.push("Lente de câmera (por lente)");
-    return missing;
   }
 
-  // === Bases atualizadas da troca + novos modelos
+  // ✅ MODELOS DE TROCA (16e e 16 Plus agora com “escadinha”)
   const TRADE_MODELS = [
     { id:"XR", name:"iPhone XR", type:"tiered", base:200, minGen:10, storages:[64,128,256] },
     { id:"XS", name:"iPhone XS", type:"tiered", base:200, minGen:10, storages:[64,256,512] },
@@ -812,8 +775,10 @@
     { id:"15_PRO_MAX", name:"iPhone 15 Pro Max", type:"fixedByGB", minGen:15, prices:{256:3600,512:3700} },
 
     { id:"16", name:"iPhone 16", type:"fixedByGB", minGen:16, prices:{128:3200,256:3300} },
-    { id:"16E", name:"iPhone 16e", type:"fixedByGB", minGen:16, prices:{128:2200} },
-    { id:"16_PLUS", name:"iPhone 16 Plus", type:"fixedByGB", minGen:16, prices:{128:3400} },
+
+    // ✅ agora escadinha
+    { id:"16E", name:"iPhone 16e", type:"tiered", base:2200, minGen:16, storages:[128,256,512] },
+    { id:"16_PLUS", name:"iPhone 16 Plus", type:"tiered", base:3400, minGen:16, storages:[128,256,512] },
 
     { id:"16_PRO", name:"iPhone 16 Pro", type:"fixedByGB", minGen:16, prices:{128:4000,256:4150} },
     { id:"16_PRO_MAX", name:"iPhone 16 Pro Max", type:"fixedByGB", minGen:16, prices:{256:4800,512:4900} }
@@ -916,129 +881,4 @@
       }
     }
 
-    const per = getLensPer(modelId);
-    const count = Number(document.getElementById("lensCount").value || 0);
-    const lensTotal = per * count;
-    document.getElementById("lensTotal").textContent = `-${formatar(lensTotal)}`;
-
-    if (lensTotal > 0){
-      total += lensTotal;
-      lines.push(`Lentes quebradas (${count}x): -${formatar(lensTotal)} (${formatar(per)}/lente)`);
-    }
-
-    return { total, lines };
-  }
-
-  function calcAll(){
-    const modelId = document.getElementById("trade_model").value;
-    const storage = Number(document.getElementById("trade_storage").value);
-    const batteryMaint = document.getElementById("trade_battery").checked;
-    const model = getModelById(modelId);
-
-    const baseObj = calcBaseTrade(model, storage);
-
-    let batteryDiscount = 0;
-    if (batteryMaint && model.minGen >= 13) batteryDiscount = 150;
-
-    const disc = calcDiscounts(modelId);
-
-    const valueTrade = Math.max(0, baseObj.base + baseObj.addStorage - batteryDiscount);
-    const finalPay = Math.max(0, valueTrade - disc.total);
-
-    document.getElementById("trade_price").textContent = formatar(valueTrade);
-
-    const storageLabel = (storage === 1024) ? "1TB" : `${storage}GB`;
-    const breakdownLines = [];
-    breakdownLines.push(`Modelo: ${model.name}`);
-    breakdownLines.push(`Armazenamento: ${storageLabel}`);
-    breakdownLines.push(`Regra: ${baseObj.note}`);
-    breakdownLines.push(`Base: ${formatar(baseObj.base)}`);
-    if (baseObj.addStorage > 0) breakdownLines.push(`+ Degraus de GB: ${formatar(baseObj.addStorage)}`);
-    if (batteryMaint){
-      if (model.minGen >= 13) breakdownLines.push(`− Bateria em manutenção: ${formatar(batteryDiscount)}`);
-      else breakdownLines.push(`Bateria em manutenção: (não aplica desconto para este modelo)`);
-    }
-    breakdownLines.push(`————————————`);
-    breakdownLines.push(`Valor antes das avarias: ${formatar(valueTrade)}`);
-    document.getElementById("trade_breakdown").innerHTML = breakdownLines.join("<br>");
-
-    document.getElementById("disc_total").textContent = formatar(disc.total);
-    document.getElementById("disc_breakdown").innerHTML = disc.lines.length ? disc.lines.join("<br>") : "<span class='hint'>Nenhuma avaria marcada.</span>";
-    document.getElementById("trade_final").textContent = formatar(finalPay);
-
-    // aviso de peças faltando (principalmente 16e)
-    const missing = getMissingParts(modelId).filter(x => x);
-    const warnBox = document.getElementById("missingPartsWarn");
-    if (modelId === "16E"){
-      warnBox.classList.remove("hidden");
-      warnBox.innerHTML = `<strong>Atenção (16e):</strong> você só informou <b>Tela</b>, <b>Vidro traseiro</b> e <b>Face ID</b>. O restante está como <b>R$0</b> no desconto.`;
-    } else {
-      warnBox.classList.add("hidden");
-      warnBox.textContent = "";
-    }
-  }
-
-  document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("tabCalc").addEventListener("click", ()=>showTab("calc"));
-    document.getElementById("tabTrade").addEventListener("click", ()=>showTab("trade"));
-
-    document.getElementById("valor").addEventListener("input", atualizar);
-
-    document.getElementById("btnUnlock").addEventListener("click", () => {
-      const pin = (document.getElementById("pin").value || "").trim();
-      const msg = document.getElementById("lockMsg");
-      if (pin === PIN_VALUE){
-        msg.textContent = "";
-        setUnlocked1(true);
-        updateLockUI1();
-        document.getElementById("advAccordion").open = true;
-      } else msg.textContent = "Senha incorreta.";
-    });
-    document.getElementById("btnLock").addEventListener("click", () => { setUnlocked1(false); updateLockUI1(); });
-
-    document.getElementById("btnUnlock2").addEventListener("click", () => {
-      const pin = (document.getElementById("pin2").value || "").trim();
-      const msg = document.getElementById("lockMsg2");
-      if (pin === PIN_VALUE){
-        msg.textContent = "";
-        setUnlocked2(true);
-        updateLockUI2();
-        document.getElementById("discountAccordion").open = true;
-      } else msg.textContent = "Senha incorreta.";
-    });
-    document.getElementById("btnLock2").addEventListener("click", () => { setUnlocked2(false); updateLockUI2(); });
-
-    document.getElementById("valor2").addEventListener("input", renderDesconto2);
-
-    showTab("calc");
-    updateLockUI1();
-    updateLockUI2();
-    atualizar();
-
-    // Troca init
-    populateTradeModels();
-    const modelSel = document.getElementById("trade_model");
-    const storageSel = document.getElementById("trade_storage");
-    const batterySel = document.getElementById("trade_battery");
-    const lensSel = document.getElementById("lensCount");
-
-    function refreshModel(){
-      const model = getModelById(modelSel.value);
-      populateStorageForModel(model);
-      renderDiscountList(modelSel.value);
-      document.querySelectorAll('#discList input[type="checkbox"][data-disc]').forEach(chk => chk.checked = false);
-      lensSel.value = "0";
-      calcAll();
-    }
-
-    modelSel.addEventListener("change", refreshModel);
-    storageSel.addEventListener("change", calcAll);
-    batterySel.addEventListener("change", calcAll);
-    lensSel.addEventListener("change", calcAll);
-
-    refreshModel();
-  });
-</script>
-
-</body>
-</html>
+    const per
