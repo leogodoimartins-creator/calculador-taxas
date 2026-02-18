@@ -61,6 +61,7 @@
     .mini{font-size:12px;color:#6b7280;margin-top:2px}
     .lensRow{display:flex;gap:10px;align-items:center;justify-content:space-between;border:1px solid #f0f0f0;border-radius:12px;padding:10px;background:#fafafa}
     .lensRow select{max-width:140px}
+    .warn{margin-top:10px;padding:10px;border-radius:12px;background:#fff7ed;border:1px solid #fed7aa;color:#7c2d12;font-size:13px}
   </style>
 </head>
 
@@ -72,13 +73,11 @@
       <button class="tabBtn" id="tabTrade">Troca de Aparelhos</button>
     </div>
 
-    <!-- =========================
-         TAB 1: CALCULADORA
-    ========================== -->
+    <!-- TAB 1: CALCULADORA -->
     <section id="viewCalc">
       <div class="card">
         <h1>Calculadora de Taxas</h1>
-        <p>Digite o <strong>valor à vista</strong>. A tabela mostra o <strong>valor final</strong> (com taxa embutida) e a <strong>parcela</strong>.</p>
+        <p>Digite o <strong>valor à vista</strong>. A tabela mostra o <strong>valor final</strong> (somando taxa) e a <strong>parcela</strong>.</p>
 
         <label for="valor">Valor à vista (R$)</label>
         <input type="text" id="valor" placeholder="Ex: 1000 ou 1000,50" />
@@ -97,6 +96,7 @@
         </div>
       </div>
 
+      <!-- Accordion 1 -->
       <div class="card" style="margin-top:20px;">
         <details class="accordion" id="advAccordion">
           <summary>
@@ -105,8 +105,7 @@
 
           <div class="acc-body">
             <p style="margin:0 0 12px;color:#555">
-              Aqui mostramos apenas <strong>Parcelas</strong> e <strong>Valor que recebe</strong>,
-              calculado como:<br>
+              Aqui mostramos apenas <strong>Parcelas</strong> e <strong>Valor que recebe</strong>, calculado como:<br>
               <strong>Valor que recebe</strong> = <em>Valor Final (tabela de cima)</em> − <em>(Valor Final × taxa extra)</em>
             </p>
 
@@ -136,6 +135,7 @@
         </details>
       </div>
 
+      <!-- Accordion 2 -->
       <div class="card" style="margin-top:20px;">
         <details class="accordion" id="discountAccordion">
           <summary>
@@ -180,9 +180,7 @@
       </div>
     </section>
 
-    <!-- =========================
-         TAB 2: TROCA
-    ========================== -->
+    <!-- TAB 2: TROCA -->
     <section id="viewTrade" class="hidden">
       <div class="card">
         <h1>Troca de Aparelhos</h1>
@@ -190,7 +188,7 @@
           <span class="pill">Base = menor GB do modelo</span>
           <span class="pill">Cada degrau de GB soma +R$ 50</span>
           <span class="pill">Bateria em manutenção: −R$ 150 (somente iPhone 13+)</span>
-          <span class="pill">Exceção: 15 Pro+ (preço fixo)</span>
+          <span class="pill">Exceção: 15 Pro+ e 16+ (preço fixo por GB)</span>
         </p>
 
         <div class="grid">
@@ -215,6 +213,8 @@
           <strong id="trade_price">R$ 0,00</strong>
           <div class="breakdown" id="trade_breakdown"></div>
         </div>
+
+        <div id="missingPartsWarn" class="warn hidden"></div>
 
         <div class="discBox">
           <p class="discTitle">Área de desconto (histórico do modelo)</p>
@@ -257,7 +257,7 @@
 
 <script>
   /* =========================
-     CALCULADORA (mantida)
+     CALCULADORA
   ========================= */
   const MAQUINA = {
     debito: 1.30,
@@ -277,9 +277,9 @@
 
   const EXTRA_MAQUINA = {
     0: 0.99,
-    1: 3.39, 2: 4.40, 3: 5.40, 4: 5.70, 5: 6.00, 6: 6.21,
-    7: 7.40, 8: 7.90, 9: 8.20, 10: 8.35, 11: 9.20, 12: 9.33,
-    13: 11.20, 14: 11.55, 15: 12.80, 16: 12.10, 17: 12.35, 18: 12.55
+    1: 3.39, 2: 4.40, 3: 5.40, 4: 5.70, 5: 5.80, 6: 5.99,
+    7: 7.20, 8: 7.90, 9: 8.40, 10: 8.85, 11: 9.40, 12: 9.85,
+    13: 11.40, 14: 11.90, 15: 12.75, 16: 12.80, 17: 12.85, 18: 12.90
   };
 
   const EXTRA_LINK = {
@@ -292,6 +292,7 @@
   const ADV_KEY_2 = "disc_unlocked_v2";
 
   function formatar(v){ return v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"}); }
+
   function parseBRL(raw) {
     const t = (raw || "").trim();
     if (!t) return null;
@@ -299,12 +300,14 @@
     const v = Number(normalizado);
     return Number.isFinite(v) ? v : null;
   }
+
   function lerValor(){ return parseBRL(document.getElementById("valor").value); }
   function lerValor2(){ return parseBRL(document.getElementById("valor2").value); }
 
-  function valorFinalEmbutido(valorAvista, taxaPercent){
-  const t = taxaPercent / 100;
-  return valorAvista * (1 + t);
+  // ✅ CORRIGIDO: SOMAR TAXA (ex: 8800 + 13,9% = 10023,20)
+  function valorFinalComTaxa(valorAvista, taxaPercent){
+    const t = taxaPercent / 100;
+    return valorAvista * (1 + t);
   }
 
   function montarTabela4(linhasHtml){
@@ -378,12 +381,12 @@
     }
 
     let linhasM = "";
-    const vfDeb = valorFinalEmbutido(valor, MAQUINA.debito);
+    const vfDeb = valorFinalComTaxa(valor, MAQUINA.debito);
     linhasM += linha4("Débito", MAQUINA.debito, vfDeb, null);
 
     Object.keys(MAQUINA.credito).map(Number).sort((a,b)=>a-b).forEach(p=>{
       const taxa = MAQUINA.credito[p];
-      const vf = valorFinalEmbutido(valor, taxa);
+      const vf = valorFinalComTaxa(valor, taxa);
       const parc = vf / p;
       linhasM += linha4(`${p}x`, taxa, vf, parc);
     });
@@ -392,7 +395,7 @@
     let linhasL = "";
     Object.keys(LINK.credito).map(Number).sort((a,b)=>a-b).forEach(p=>{
       const taxa = LINK.credito[p];
-      const vf = valorFinalEmbutido(valor, taxa);
+      const vf = valorFinalComTaxa(valor, taxa);
       const parc = vf / p;
       linhasL += linha4(`${p}x`, taxa, vf, parc);
     });
@@ -412,15 +415,17 @@
       return;
     }
 
+    // ⚠️ Aqui “valor que recebe” segue sua regra do accordion:
+    // Valor Final (tabela de cima) − (Valor Final × taxa extra)
     let linhasM = "";
     {
-      const vf = valorFinalEmbutido(valorAvista, MAQUINA.debito);
+      const vf = valorFinalComTaxa(valorAvista, MAQUINA.debito);
       const te = taxaExtra(EXTRA_MAQUINA, 0);
       const recebe = vf - (vf * (te/100));
       linhasM += linha2("Débito", recebe);
     }
     Object.keys(MAQUINA.credito).map(Number).sort((a,b)=>a-b).forEach(p=>{
-      const vf = valorFinalEmbutido(valorAvista, MAQUINA.credito[p]);
+      const vf = valorFinalComTaxa(valorAvista, MAQUINA.credito[p]);
       const te = taxaExtra(EXTRA_MAQUINA, p);
       const recebe = vf - (vf * (te/100));
       linhasM += linha2(`${p}x`, recebe);
@@ -429,7 +434,7 @@
 
     let linhasL = "";
     Object.keys(LINK.credito).map(Number).sort((a,b)=>a-b).forEach(p=>{
-      const vf = valorFinalEmbutido(valorAvista, LINK.credito[p]);
+      const vf = valorFinalComTaxa(valorAvista, LINK.credito[p]);
       const te = taxaExtra(EXTRA_LINK, p);
       const recebe = vf - (vf * (te/100));
       linhasL += linha2(`${p}x`, recebe);
@@ -503,14 +508,35 @@
   }
 
   /* =========================
-     TROCA (com histórico por modelo)
+     TROCA (bases atualizadas + novos modelos)
   ========================= */
 
-  // 1) Tabelas de “histórico” (valores por modelo)
+  // IDs de modelo
+  // XR, XS, XS_MAX, 11, 11_PRO, 11_PRO_MAX, 12, 12_PRO, 12_PRO_MAX,
+  // 13, 13_PRO, 13_PRO_MAX, 14, 14_PLUS, 14_PRO, 14_PRO_MAX,
+  // 15, 15_PLUS, 15_PRO, 15_PRO_MAX,
+  // 16, 16E, 16_PLUS, 16_PRO, 16_PRO_MAX
+
+  // === TABELAS DE PEÇAS (com regras que você definiu)
   function getScreen(modelId){
     const m = modelId;
+
+    // 16e (novo)
+    if (m==="16E") return 700;
+
+    // 15 Plus (tela específica)
+    if (m==="15_PLUS") return 1000;
+
+    // 14 Plus = igual 14
+    if (m==="14_PLUS") return 700;
+
+    // 16 Plus = igual 16 (assumido)
+    if (m==="16_PLUS") return 1300;
+
+    // padrão antigo
     if (m==="XR") return 300;
-    if (m==="XS" || m==="XS_MAX") return (m==="XS_MAX" ? 500 : 400);
+    if (m==="XS") return 400;
+    if (m==="XS_MAX") return 500;
     if (m==="11") return 350;
     if (m==="11_PRO") return 500;
     if (m==="11_PRO_MAX") return 600;
@@ -533,6 +559,19 @@
 
   function getRearCam(modelId){
     const m = modelId;
+
+    // 14 Plus = igual 14
+    if (m==="14_PLUS") return 330;
+
+    // 15 Plus = igual 15
+    if (m==="15_PLUS") return 380;
+
+    // 16 Plus = igual 16 (assumido)
+    if (m==="16_PLUS") return 500;
+
+    // 16e: não informado -> 0
+    if (m==="16E") return 0;
+
     if (m==="XR" || m==="XS") return 170;
     if (m==="XS_MAX") return 170;
     if (m==="11") return 180;
@@ -556,6 +595,12 @@
 
   function getFrontCam(modelId){
     const m = modelId;
+
+    if (m==="14_PLUS") return 350;
+    if (m==="15_PLUS") return 400; // toda linha 15
+    if (m==="16_PLUS") return 400; // mantendo padrão 15 (não informado)
+    if (m==="16E") return 0;        // não informado
+
     if (m==="XR" || m==="XS" || m==="XS_MAX") return 250;
     if (m==="11" || m==="11_PRO" || m==="11_PRO_MAX") return 280;
     if (m==="12" || m==="12_PRO" || m==="12_PRO_MAX") return 300;
@@ -563,12 +608,18 @@
     if (m==="13_PRO" || m==="13_PRO_MAX") return 380;
     if (m==="14" || m==="14_PRO" || m==="14_PRO_MAX") return 350;
     if (m==="15" || m==="15_PRO" || m==="15_PRO_MAX") return 400;
-    if (m==="16" || m==="16_PRO" || m==="16_PRO_MAX") return 400; // (você não enviou a linha 16 frontal; mantive padrão 15)
+    if (m==="16" || m==="16_PRO" || m==="16_PRO_MAX") return 400; // padrão 15
     return 0;
   }
 
   function getMic(modelId){
     const m = modelId;
+
+    if (m==="14_PLUS") return 330;
+    if (m==="15_PLUS") return 450;
+    if (m==="16_PLUS") return 450; // padrão 15
+    if (m==="16E") return 0;       // não informado
+
     if (m==="XR" || m==="XS") return 180;
     if (m==="XS_MAX") return 200;
     if (m==="11") return 180;
@@ -581,12 +632,18 @@
     if (m==="14") return 330;
     if (m==="14_PRO" || m==="14_PRO_MAX") return 350;
     if (m==="15" || m==="15_PRO" || m==="15_PRO_MAX") return 450;
-    if (m==="16" || m==="16_PRO" || m==="16_PRO_MAX") return 450; // (você não enviou linha 16 mic; mantive padrão 15)
+    if (m==="16" || m==="16_PRO" || m==="16_PRO_MAX") return 450; // padrão 15
     return 0;
   }
 
   function getSpeaker(modelId){
     const m = modelId;
+
+    if (m==="14_PLUS") return 180;
+    if (m==="15_PLUS") return 250;
+    if (m==="16_PLUS") return 250; // padrão 15
+    if (m==="16E") return 0;       // não informado
+
     if (m==="XR" || m==="XS") return 120;
     if (m==="XS_MAX") return 120;
     if (m==="11") return 120;
@@ -598,12 +655,18 @@
     if (m==="13_PRO" || m==="13_PRO_MAX") return 180;
     if (m==="14" || m==="14_PRO" || m==="14_PRO_MAX") return 180;
     if (m==="15" || m==="15_PRO" || m==="15_PRO_MAX") return 250;
-    if (m==="16" || m==="16_PRO" || m==="16_PRO_MAX") return 250; // (você não enviou linha 16 speaker; mantive padrão 15)
+    if (m==="16" || m==="16_PRO" || m==="16_PRO_MAX") return 250; // padrão 15
     return 0;
   }
 
   function getButton(modelId){
     const m = modelId;
+
+    if (m==="14_PLUS") return 250;
+    if (m==="15_PLUS") return 330;
+    if (m==="16_PLUS") return 330; // padrão 15
+    if (m==="16E") return 0;       // não informado
+
     if (m==="XR" || m==="XS" || m==="XS_MAX") return 180;
     if (m==="11") return 180;
     if (m==="11_PRO" || m==="11_PRO_MAX") return 200;
@@ -613,12 +676,18 @@
     if (m==="13_PRO" || m==="13_PRO_MAX") return 250;
     if (m==="14" || m==="14_PRO" || m==="14_PRO_MAX") return 250;
     if (m==="15" || m==="15_PRO" || m==="15_PRO_MAX") return 330;
-    if (m==="16" || m==="16_PRO" || m==="16_PRO_MAX") return 330; // (você não enviou linha 16 botão; mantive padrão 15)
+    if (m==="16" || m==="16_PRO" || m==="16_PRO_MAX") return 330; // padrão 15
     return 0;
   }
 
   function getBackGlass(modelId){
     const m = modelId;
+
+    if (m==="16E") return 280; // informado
+    if (m==="14_PLUS") return 280; // igual 14
+    if (m==="15_PLUS") return 330;
+    if (m==="16_PLUS") return 380; // igual 16
+
     if (m==="XR" || m==="XS" || m==="XS_MAX") return 180;
     if (m==="11" || m==="11_PRO" || m==="11_PRO_MAX") return 200;
     if (m==="12" || m==="12_PRO" || m==="12_PRO_MAX") return 230;
@@ -631,18 +700,30 @@
 
   function getFaceID(modelId){
     const m = modelId;
+
+    if (m==="16E") return 450;   // informado
+    if (m==="14_PLUS") return 450;
+    if (m==="15_PLUS") return 550;
+    if (m==="16_PLUS") return 550; // padrão 15 (não informado para 16)
+
     if (m==="XR" || m==="XS" || m==="XS_MAX") return 250;
     if (m==="11" || m==="11_PRO" || m==="11_PRO_MAX") return 250;
     if (m==="12" || m==="12_PRO" || m==="12_PRO_MAX") return 300;
     if (m==="13" || m==="13_PRO" || m==="13_PRO_MAX") return 450;
     if (m==="14" || m==="14_PRO" || m==="14_PRO_MAX") return 450;
     if (m==="15" || m==="15_PRO" || m==="15_PRO_MAX") return 550;
-    if (m==="16" || m==="16_PRO" || m==="16_PRO_MAX") return 550; // (você não enviou FaceID linha 16; mantive padrão 15)
+    if (m==="16" || m==="16_PRO" || m==="16_PRO_MAX") return 550; // padrão 15
     return 0;
   }
 
   function getBoard(modelId){
     const m = modelId;
+
+    if (m==="14_PLUS") return 700;
+    if (m==="15_PLUS") return 1000;
+    if (m==="16_PLUS") return 1200;
+    if (m==="16E") return 0; // não informado
+
     if (m==="XR" || m==="XS" || m==="XS_MAX") return 350;
     if (m==="11" || m==="11_PRO" || m==="11_PRO_MAX") return 400;
     if (m==="12" || m==="12_PRO" || m==="12_PRO_MAX") return 500;
@@ -655,6 +736,12 @@
 
   function getLensPer(modelId){
     const m = modelId;
+
+    if (m==="14_PLUS") return 110;
+    if (m==="15_PLUS") return 120;
+    if (m==="16_PLUS") return 130; // igual 16 Plus/16 (sua regra: 16/16 Plus = 130; 16 Pro/Max = 150)
+    if (m==="16E") return 0;        // não informado
+
     if (m==="XR") return 70;
     if (m==="11" || m==="11_PRO" || m==="11_PRO_MAX") return 80;
     if (m==="12" || m==="12_PRO" || m==="12_PRO_MAX") return 90;
@@ -666,7 +753,35 @@
     return 0;
   }
 
-  // 2) Lista dos modelos da troca (com GB e regra +50 por degrau)
+  function buildDiscountsForModel(modelId){
+    return [
+      { id:"tela", label:"Tela (original)", value: getScreen(modelId) },
+      { id:"camera_traseira", label:"Câmera traseira", value: getRearCam(modelId) },
+      { id:"camera_frontal", label:"Câmera frontal", value: getFrontCam(modelId) },
+      { id:"conector_mic", label:"Conector / Microfone (original)", value: getMic(modelId) },
+      { id:"alto_falante", label:"Alto-falante", value: getSpeaker(modelId) },
+      { id:"botao", label:"Botão", value: getButton(modelId) },
+      { id:"vidro_traseiro", label:"Vidro traseiro", value: getBackGlass(modelId) },
+      { id:"faceid", label:"Face ID", value: getFaceID(modelId) },
+      { id:"placa", label:"Problema de placa", value: getBoard(modelId) }
+    ];
+  }
+
+  function getMissingParts(modelId){
+    const list = buildDiscountsForModel(modelId);
+    const missing = [];
+    for (const it of list){
+      if (!it.value || it.value === 0){
+        // não marca vidro/tela se for 0 em modelos antigos? (aqui é proposital p/ 16e)
+        missing.push(it.label);
+      }
+    }
+    const lens = getLensPer(modelId);
+    if (!lens || lens === 0) missing.push("Lente de câmera (por lente)");
+    return missing;
+  }
+
+  // === Bases atualizadas da troca + novos modelos
   const TRADE_MODELS = [
     { id:"XR", name:"iPhone XR", type:"tiered", base:200, minGen:10, storages:[64,128,256] },
     { id:"XS", name:"iPhone XS", type:"tiered", base:200, minGen:10, storages:[64,256,512] },
@@ -685,18 +800,23 @@
     { id:"13_PRO_MAX", name:"iPhone 13 Pro Max", type:"tiered", base:1900, minGen:13, storages:[128,256,512,1024] },
 
     { id:"14", name:"iPhone 14", type:"tiered", base:1700, minGen:14, storages:[128,256,512] },
-    { id:"14_PRO", name:"iPhone 14 Pro", type:"tiered", base:2400, minGen:14, storages:[128,256,512,1024] },
-    { id:"14_PRO_MAX", name:"iPhone 14 Pro Max", type:"tiered", base:2850, minGen:14, storages:[128,256,512,1024] },
+    { id:"14_PLUS", name:"iPhone 14 Plus", type:"tiered", base:2000, minGen:14, storages:[128,256,512] },
+    { id:"14_PRO", name:"iPhone 14 Pro", type:"tiered", base:2200, minGen:14, storages:[128,256,512,1024] },
+    { id:"14_PRO_MAX", name:"iPhone 14 Pro Max", type:"tiered", base:2600, minGen:14, storages:[128,256,512,1024] },
 
     { id:"15", name:"iPhone 15", type:"tiered", base:2350, minGen:15, storages:[128,256,512] },
+    { id:"15_PLUS", name:"iPhone 15 Plus", type:"tiered", base:2500, minGen:15, storages:[128,256,512] },
 
-    // Exceções (preço fixo por GB já descrito por você)
+    // fixos por GB
     { id:"15_PRO", name:"iPhone 15 Pro", type:"fixedByGB", minGen:15, prices:{128:2750,256:2950} },
-    { id:"15_PRO_MAX", name:"iPhone 15 Pro Max", type:"fixedByGB", minGen:15, prices:{256:3900,512:4100} },
+    { id:"15_PRO_MAX", name:"iPhone 15 Pro Max", type:"fixedByGB", minGen:15, prices:{256:3600,512:3700} },
 
-    { id:"16", name:"iPhone 16", type:"fixedByGB", minGen:16, prices:{128:3400,256:3500} },
-    { id:"16_PRO", name:"iPhone 16 Pro", type:"fixedByGB", minGen:16, prices:{128:4100,256:4250} },
-    { id:"16_PRO_MAX", name:"iPhone 16 Pro Max", type:"fixedByGB", minGen:16, prices:{256:5000,512:5200} }
+    { id:"16", name:"iPhone 16", type:"fixedByGB", minGen:16, prices:{128:3200,256:3300} },
+    { id:"16E", name:"iPhone 16e", type:"fixedByGB", minGen:16, prices:{128:2200} },
+    { id:"16_PLUS", name:"iPhone 16 Plus", type:"fixedByGB", minGen:16, prices:{128:3400} },
+
+    { id:"16_PRO", name:"iPhone 16 Pro", type:"fixedByGB", minGen:16, prices:{128:4000,256:4150} },
+    { id:"16_PRO_MAX", name:"iPhone 16 Pro Max", type:"fixedByGB", minGen:16, prices:{256:4800,512:4900} }
   ];
 
   function populateTradeModels(){
@@ -722,7 +842,7 @@
     let storages = [];
     if (model.type === "fixedByGB"){
       storages = Object.keys(model.prices).map(Number).sort((a,b)=>a-b);
-      hint.textContent = "Preço fixo por GB (modelo já descrito).";
+      hint.textContent = "Preço fixo por GB.";
     } else {
       storages = (model.storages || []).slice().sort((a,b)=>a-b);
       hint.textContent = "Base = menor GB do modelo. Cada degrau soma +R$ 50.";
@@ -736,25 +856,9 @@
     }
   }
 
-  function buildDiscountsForModel(modelId){
-    // “histórico” individual por modelo (valores calculados pela sua tabela)
-    return [
-      { id:"tela", label:"Tela (original)", value: getScreen(modelId) },
-      { id:"camera_traseira", label:"Câmera traseira", value: getRearCam(modelId) },
-      { id:"camera_frontal", label:"Câmera frontal", value: getFrontCam(modelId) },
-      { id:"conector_mic", label:"Conector / Microfone (original)", value: getMic(modelId) },
-      { id:"alto_falante", label:"Alto-falante", value: getSpeaker(modelId) },
-      { id:"botao", label:"Botão", value: getButton(modelId) },
-      { id:"vidro_traseiro", label:"Vidro traseiro", value: getBackGlass(modelId) },
-      { id:"faceid", label:"Face ID", value: getFaceID(modelId) },
-      { id:"placa", label:"Problema de placa", value: getBoard(modelId) }
-    ];
-  }
-
   function renderDiscountList(modelId){
     const box = document.getElementById("discList");
     box.innerHTML = "";
-
     const discounts = buildDiscountsForModel(modelId);
 
     for (const d of discounts){
@@ -773,12 +877,10 @@
       box.appendChild(row);
     }
 
-    // bind
     box.querySelectorAll('input[type="checkbox"][data-disc]').forEach(chk=>{
       chk.addEventListener("change", () => calcAll());
     });
 
-    // lentes por modelo
     const per = getLensPer(modelId);
     document.getElementById("lensHint").textContent = `Até 3 lentes • desconto por lente: ${formatar(per)}`;
     document.getElementById("lensCount").value = "0";
@@ -792,12 +894,8 @@
     const storages = (model.storages || []).slice().sort((a,b)=>a-b);
     const idx = storages.indexOf(storage);
     const steps = (idx >= 0) ? idx : 0;
-    const addStorage = 50 * steps; // +50 progressivo por degrau
-    return {
-      base: model.base,
-      addStorage,
-      note: `Base = menor GB (${storages[0]}GB) | +R$50 por degrau`
-    };
+    const addStorage = 50 * steps;
+    return { base: model.base, addStorage, note: `Base = menor GB (${storages[0]}GB) | +R$50 por degrau` };
   }
 
   function calcDiscounts(modelId){
@@ -818,7 +916,6 @@
       }
     }
 
-    // lentes (0 a 3)
     const per = getLensPer(modelId);
     const count = Number(document.getElementById("lensCount").value || 0);
     const lensTotal = per * count;
@@ -867,13 +964,20 @@
 
     document.getElementById("disc_total").textContent = formatar(disc.total);
     document.getElementById("disc_breakdown").innerHTML = disc.lines.length ? disc.lines.join("<br>") : "<span class='hint'>Nenhuma avaria marcada.</span>";
-
     document.getElementById("trade_final").textContent = formatar(finalPay);
+
+    // aviso de peças faltando (principalmente 16e)
+    const missing = getMissingParts(modelId).filter(x => x);
+    const warnBox = document.getElementById("missingPartsWarn");
+    if (modelId === "16E"){
+      warnBox.classList.remove("hidden");
+      warnBox.innerHTML = `<strong>Atenção (16e):</strong> você só informou <b>Tela</b>, <b>Vidro traseiro</b> e <b>Face ID</b>. O restante está como <b>R$0</b> no desconto.`;
+    } else {
+      warnBox.classList.add("hidden");
+      warnBox.textContent = "";
+    }
   }
 
-  /* =========================
-     INIT
-  ========================= */
   document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("tabCalc").addEventListener("click", ()=>showTab("calc"));
     document.getElementById("tabTrade").addEventListener("click", ()=>showTab("trade"));
@@ -906,7 +1010,6 @@
 
     document.getElementById("valor2").addEventListener("input", renderDesconto2);
 
-    // Locks state
     showTab("calc");
     updateLockUI1();
     updateLockUI2();
@@ -923,7 +1026,6 @@
       const model = getModelById(modelSel.value);
       populateStorageForModel(model);
       renderDiscountList(modelSel.value);
-      // limpar checks
       document.querySelectorAll('#discList input[type="checkbox"][data-disc]').forEach(chk => chk.checked = false);
       lensSel.value = "0";
       calcAll();
